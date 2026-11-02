@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SouqDZ — Achetez, vendez, découvrez</title>
+
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0e7c66" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="SouqDZ" />
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+<style>
+  :root {
+    --primary: #0e7c66; --primary-dark: #095e4d; --accent: #f4a300;
+    --bg: #f7f8fa; --card-bg: #ffffff; --text: #1a1a1a; --text-light: #6b7280;
+    --border: #e5e7eb; --radius: 14px; --img-bg: #eef1f4; --soft: #eef6f3;
+  }
+  body.dark { --bg: #0e1013; --card-bg: #171a1f; --text: #eceff1; --text-light: #9aa3ad; --border: #2a2f37; --img-bg: #232831; --soft: #13302a; color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+  a { text-decoration: none; color: inherit; }
+  img { max-width: 100%; display: block; }
+  button { font-family: inherit; }
+
+  header { background: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+  .header-top { display: flex; align-items: center; gap: 14px; padding: 14px 24px; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
+  .logo { font-size: 22px; font-weight: 800; color: var(--primary); white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+  .logo span { color: var(--accent); }
+  .search-bar { flex: 1; display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; gap: 8px; min-width: 160px; }
+  .search-bar input { border: none; background: transparent; outline: none; width: 100%; font-size: 14px; }
+  .location-badge { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--primary); background: var(--soft); padding: 8px 12px; border-radius: 999px; white-space: nowrap; cursor: pointer; border: none; }
+  .header-actions { display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-inline-start: auto; }
+  .header-actions-row1 { display: flex; align-items: center; gap: 8px; }
+  .icon-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 17px; background: var(--bg); cursor: pointer; border: none; position: relative; }
+  .icon-btn .dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #dc2626; display: none; }
+  .icon-btn .dot.show { display: block; }
+  .btn { padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn[disabled] { opacity: 0.6; cursor: default; }
+  .header-nav { display: flex; gap: 20px; padding: 10px 24px; max-width: 1200px; margin: 0 auto; font-size: 14px; color: var(--text-light); overflow-x: auto; }
+  .header-nav a:hover { color: var(--primary); }
+  .header-nav a { cursor: pointer; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 56px 24px; text-align: center; }
+  .hero h1 { font-size: 32px; font-weight: 800; max-width: 700px; margin: 0 auto 12px; }
+  .hero p { font-size: 15px; opacity: 0.9; margin-bottom: 24px; }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero .btn-primary { background: var(--accent); color: #1a1a1a; }
+  .hero .btn-outline { border-color: rgba(255,255,255,0.5); color: white; background: transparent; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 36px 24px; }
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; display:flex; align-items:center; justify-content:space-between; gap: 10px; flex-wrap: wrap; }
+
+  .promos-row { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+  .promo-card { flex: 0 0 160px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; position: relative; }
+  .promo-card .product-image { aspect-ratio: 1; }
+  .promo-card .product-body { padding: 10px 12px 12px; }
+  .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filters-bar select, .filters-bar input {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px;
+    background: var(--card-bg); color: var(--text); font-family: inherit;
+  }
+  .filters-bar input[type="number"] { width: 110px; }
+
+  .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; margin-bottom: 44px; }
+  .category-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 10px; text-align: center; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .category-card.active, .category-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--primary); }
+  .category-card .emoji { font-size: 24px; margin-bottom: 6px; }
+  .category-card .name { font-size: 13px; font-weight: 600; }
+
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+  .product-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; position: relative; cursor: pointer; }
+  .product-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .product-image { aspect-ratio: 4/3; background: var(--img-bg); display: flex; align-items: center; justify-content: center; font-size: 34px; color: #c3cad3; overflow: hidden; }
+  .product-image img { width: 100%; height: 100%; object-fit: cover; }
+  .discount-ribbon { position: absolute; top: 10px; left: 10px; background: #e53935; color: white; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; z-index: 2; }
+  .fav-btn { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; z-index: 2; border: none; }
+  .fav-btn.active { color: #dc2626; }
+  .product-body { padding: 12px 14px 14px; }
+  .product-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .product-price { color: var(--primary); font-weight: 800; font-size: 16px; margin-bottom: 6px; }
+  .product-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-light); margin-bottom: 10px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--soft); color: var(--primary); font-weight: 600; }
+  .product-card .btn { width: 100%; }
+  .empty-state { grid-column: 1 / -1; text-align: center; padding: 50px 20px; color: var(--text-light); background: var(--card-bg); border: 1px dashed var(--border); border-radius: var(--radius); }
+  .empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
+
+  footer { text-align: center; padding: 30px 24px; color: var(--text-light); font-size: 13px; border-top: 1px solid var(--border); margin-top: 40px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+  .overlay.show { display: flex; }
+  .modal { background: var(--card-bg); border-radius: 16px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; padding: 22px; position: relative; }
+  .modal.wide { max-width: 640px; }
+  .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-light); }
+  .modal h2 { font-size: 19px; margin-bottom: 16px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .form-error { background: #fdecec; color: #b91c1c; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: none; }
+  .form-error.show { display: block; }
+  .form-ok { background: #eafaf3; color: #0e7c66; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: none; }
+  .form-ok.show { display: block; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--bg); border-radius: 10px; padding: 4px; }
+  .tab-btn { flex: 1; padding: 8px; border: none; background: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--text-light); }
+  .tab-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .photo-upload { border: 2px dashed var(--border); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; margin-bottom: 12px; }
+  .photo-upload:hover { border-color: var(--primary); }
+  .photo-previews { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .photo-previews .thumb { width: 64px; height: 64px; border-radius: 8px; overflow: hidden; position: relative; }
+  .photo-previews .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-previews .thumb .rm { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; }
+
+  .detail-gallery { aspect-ratio: 16/10; background: var(--img-bg); border-radius: 12px; overflow: hidden; margin-bottom: 14px; display:flex; align-items:center; justify-content:center; font-size:40px; color:#c3cad3; }
+  .detail-gallery img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-thumbs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .detail-thumbs img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid transparent; }
+  .detail-thumbs img.active { border-color: var(--primary); }
+  .seller-box { display: flex; align-items: center; gap: 10px; background: var(--bg); padding: 12px; border-radius: 10px; margin: 14px 0; }
+  .seller-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .detail-actions .btn { flex: 1; min-width: 140px; }
+
+  .chat-box { display: flex; flex-direction: column; height: 420px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 10px 4px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 13px; }
+  .msg.me { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 3px; }
+  .msg.them { align-self: flex-start; background: var(--bg); border-bottom-left-radius: 3px; }
+  .chat-input { display: flex; gap: 8px; margin-top: 10px; }
+  .chat-input input { flex: 1; }
+
+  .my-list-item { display: flex; gap: 12px; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+  .my-list-item .thumb { width: 54px; height: 54px; border-radius: 8px; background: var(--img-bg); object-fit: cover; flex-shrink: 0; }
+  .my-list-item .info { flex: 1; min-width: 0; }
+  .my-list-item .info .n { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: white; padding: 10px 18px; border-radius: 999px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity 0.25s; pointer-events: none; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; }
+
+  .overlay.page { align-items: stretch; justify-content: stretch; padding: 0; background: var(--bg); }
+  .page-modal { background: var(--bg); width: 100%; max-width: 100%; height: 100%; max-height: 100%; border-radius: 0; overflow-y: auto; padding: 0; margin: 0; }
+  .page-topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+  .page-topbar .back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text); width: 34px; height: 34px; border-radius: 50%; }
+  .page-topbar .back-btn:hover { background: var(--bg); }
+  .page-topbar h2 { font-size: 17px; margin: 0; }
+  .page-body { padding: 20px; max-width: 560px; margin: 0 auto; }
+
+  .field input, .field select, .field textarea { background: var(--card-bg); color: var(--text); }
+  .search-bar input { color: var(--text); }
+  #menuBtn { font-size: 22px; font-weight: 800; line-height: 1; }
+
+  .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 250; display: none; }
+  .drawer-overlay.show { display: block; }
+  .drawer { position: absolute; top: 0; right: 0; height: 100%; width: min(330px, 86vw); background: var(--card-bg); box-shadow: -8px 0 30px rgba(0,0,0,0.25); transform: translateX(100%); transition: transform 0.25s ease; display: flex; flex-direction: column; overflow-y: auto; }
+  .drawer-overlay.show .drawer { transform: translateX(0); }
+  .drawer-head { padding: 26px 18px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; display: flex; align-items: center; gap: 12px; }
+  .drawer-avatar { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; flex-shrink: 0; }
+  .drawer-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; font-size: 15px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; color: var(--text); }
+  .drawer-item:hover { background: var(--bg); }
+  .drawer-item .ico { width: 26px; text-align: center; font-size: 18px; }
+  .drawer-item .count { margin-left: auto; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 7px; }
+  .drawer-sep { height: 1px; background: var(--border); margin: 6px 0; }
+
+  .settings-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .settings-card h3 { font-size: 15px; margin-bottom: 12px; }
+  .theme-options { display: flex; gap: 8px; }
+  .theme-opt { flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px; font-weight: 600; cursor: pointer; }
+  .theme-opt.active { border-color: var(--primary); color: var(--primary); background: var(--soft); }
+
+  .chat-page { display: flex; flex-direction: column; overflow: hidden !important; }
+  .chat-peer { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .chat-title { font-weight: 800; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-sub { font-size: 12px; color: var(--text-light); }
+  .chat-product { display: flex; gap: 10px; align-items: center; padding: 10px 16px; background: var(--card-bg); border-bottom: 1px solid var(--border); cursor: pointer; }
+  .chat-product img, .chat-product .ph { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--img-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .chat-page .chat-messages { flex: 1; overflow-y: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); }
+  .chat-page .msg { max-width: 80%; padding: 9px 13px; border-radius: 18px; font-size: 14px; line-height: 1.4; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .chat-page .msg.me { align-self: flex-end; background: linear-gradient(135deg, #0e9c7f, #0e7c66); color: #fff; border-bottom-right-radius: 5px; }
+  .chat-page .msg.them { align-self: flex-start; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 5px; }
+  .msg .meta { font-size: 10px; opacity: 0.7; margin-top: 3px; text-align: right; }
+  .day-sep { align-self: center; font-size: 11px; color: var(--text-light); background: var(--card-bg); border: 1px solid var(--border); padding: 2px 10px; border-radius: 999px; margin: 8px 0; }
+  .chat-quick { display: flex; gap: 8px; overflow-x: auto; padding: 8px 14px; background: var(--bg); }
+  .chat-quick:empty { display: none; }
+  .chat-quick button { white-space: nowrap; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--primary); background: var(--card-bg); color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .chat-input-bar { display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--card-bg); border-top: 1px solid var(--border); }
+  .chat-input-bar input { flex: 1; padding: 11px 16px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; outline: none; background: var(--bg); color: var(--text); font-family: inherit; }
+  .send-btn { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--primary); color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+
+  @media (max-width: 720px) {
+    .logo { order: 1; }
+    .location-badge { order: 2; }
+    .location-badge span { display: none; }
+    .header-actions { order: 3; margin-inline-start: auto; }
+    .search-bar { order: 4; width: 100%; }
+    .header-nav { display: none; }
+    .hero h1 { font-size: 24px; }
+    .pub-label { display: none; }
+    .chat-page .msg { max-width: 86%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <a class="logo" href="#" id="logoHome">
+      <svg width="30" height="30" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0e9c7f"/><stop offset="100%" stop-color="#095e4d"/></linearGradient></defs>
+        <g transform="translate(5,7)">
+          <path d="M14 22 L14 16 C14 8.8 19.8 3 27 3 C34.2 3 40 8.8 40 16 L40 22" fill="none" stroke="url(#bg1)" stroke-width="5" stroke-linecap="round"/>
+          <rect x="4" y="20" width="46" height="26" rx="10" fill="url(#bg1)"/>
+          <path d="M18 33 C18 41 22 46 27 46 C32 46 36 41 36 33" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="44" cy="42" r="9" fill="#f4a300" stroke="#fff" stroke-width="2"/>
+          <text x="44" y="45" font-family="Arial, sans-serif" font-size="8.5" font-weight="800" fill="#fff" text-anchor="middle">DZ</text>
+        </g>
+      </svg>
+      Souq<span>DZ</span>
+    </a>
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" id="searchInput" placeholder="Rechercher un produit, une marque..." />
+    </div>
+    <button class="location-badge" id="locationBadge" title="Position par défaut">📍 <span id="locationLabel">Alger</span></button>
+    <div class="header-actions" id="headerActions"></div>
+  </div>
+  <nav class="header-nav">
+    <a data-nav="categories">Catégories</a>
+    <a data-nav="produits">Marketplace</a>
+    <a data-nav="favoris">Mes favoris</a>
+    <a data-nav="messages">Mes messages</a>
+    <a data-nav="mesannonces">Mes annonces</a>
+    <a data-nav="commandes">Commandes reçues</a>
+    <a data-nav="mescommandes">Mes commandes</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Vendez, achetez, découvrez de nouveaux produits</h1>
+  <p>Un seul endroit qui réunit vendeurs et acheteurs partout en Algérie.</p>
+  <div class="hero-actions">
+    <button class="btn btn-primary" id="heroPublish">Publier une annonce</button>
+    <button class="btn btn-outline" onclick="document.getElementById('produits').scrollIntoView({behavior:'smooth'})">Explorer les produits</button>
+  </div>
+</section>
+
+<main>
+  <section id="categories">
+    <h2 class="section-title">Catégories</h2>
+    <div class="categories-grid" id="categoriesGrid"></div>
+  </section>
+
+  <section id="promos" style="display:none;margin-bottom:36px;">
+    <h2 class="section-title">🔥 Promos des vendeurs</h2>
+    <div class="promos-row" id="promosRow"></div>
+  </section>
+
+  <section id="produits">
+    <h2 class="section-title">
+      <span id="produitsTitle">Produits récents</span>
+      <span>
+        <button class="btn btn-outline btn-sm" id="refreshBtn">🔄 Actualiser</button>
+        <button class="btn btn-outline btn-sm" id="clearFilterBtn" style="display:none;">✕ Réinitialiser</button>
+      </span>
+    </h2>
+    <div class="filters-bar">
+      <select id="filterWilaya"><option value="">Toutes les wilayas</option></select>
+      <input type="number" id="filterPrixMin" placeholder="Prix min" />
+      <input type="number" id="filterPrixMax" placeholder="Prix max" />
+      <select id="filterTri">
+        <option value="recent">Plus récent</option>
+        <option value="prix_asc">Prix croissant</option>
+        <option value="prix_desc">Prix décroissant</option>
+      </select>
+    </div>
+    <div class="products-grid" id="productsGrid"><div class="empty-state"><div class="emoji">⏳</div><p>Chargement...</p></div></div>
+  </section>
+</main>
+
+<footer>© 2026 SouqDZ — Marketplace algérienne, connectée à une base de données partagée (Supabase).</footer>
+
+<!-- ===== Page Auth ===== -->
+<div class="overlay page" id="authOverlay">
+  <div class="page-modal">
+    <div class="page-topbar">
+      <button class="back-btn" data-close="authOverlay">←</button>
+      <h2 id="authPageTitle">Connexion</h2>
+    </div>
+    <div class="page-body">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabLogin">Connexion</button>
+        <button class="tab-btn" id="tabRegister">Inscription</button>
+      </div>
+      <div id="loginForm">
+        <div class="form-error" id="loginError"></div>
+        <div class="field"><label>Email</label><input type="email" id="loginEmail" /></div>
+        <div class="field"><label>Mot de passe</label><input type="password" id="loginPassword" /></div>
+        <button class="btn btn-primary" style="width:100%" id="loginSubmit">Se connecter</button>
+      </div>
+      <div id="registerForm" style="display:none;">
+        <div class="form-error" id="registerError"></div>
+        <div class="form-ok" id="registerOk"></div>
+        <div class="field-row">
+          <div class="field"><label>Prénom</label><input type="text" id="regPrenom" /></div>
+          <div class="field"><label>Nom</label><input type="text" id="regNom" /></div>
+        </div>
+        <div class="field"><label>Email</label><input type="email" id="regEmail" /></div>
+        <div class="field"><label>Téléphone (ex: 0551234567)</label><input type="text" id="regTelephone" /></div>
+        <div class="field-row">
+          <div class="field"><label>Wilaya</label><input type="text" id="regWilaya" placeholder="Alger" /></div>
+          <div class="field"><label>Commune</label><input type="text" id="regCommune" /></div>
+        </div>
+        <div class="field"><label>Mot de passe (6 caractères min)</label><input type="password" id="regPassword" /></div>
+        <button class="btn btn-primary" style="width:100%" id="registerSubmit">Créer mon compte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Page Publier ===== -->
+<div class="overlay page" id="publishOverlay">
+  <div class="page-modal">
+    <div class="page-topbar">
+      <button class="back-btn" data-close="publishOverlay">←</button>
+      <h2>Publier une annonce</h2>
+    </div>
+    <div class="page-body">
+      <div class="form-error" id="publishError"></div>
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Photos du produit</label>
+      <div class="photo-upload" id="photoUploadZone">
+        📷 Cliquez ou appuyez ici pour ajouter des photos (max 6)
+        <input type="file" id="photoInput" accept="image/*" multiple hidden />
+      </div>
+      <div class="photo-previews" id="photoPreviews"></div>
+      <div class="field"><label>Nom du produit</label><input type="text" id="pNom" /></div>
+      <div class="field"><label>Description</label><textarea id="pDescription" rows="3"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Prix (DA)</label><input type="number" id="pPrix" /></div>
+        <div class="field"><label>Catégorie</label><select id="pCategorie"></select></div>
+      </div>
+      <div class="field"><label>Ancien prix (optionnel — affiche une réduction barrée)</label><input type="number" id="pAncienPrix" placeholder="Laisser vide si pas de réduction" /></div>
+      <div class="field-row">
+        <div class="field"><label>État</label><select id="pEtat"><option value="NEUF">Neuf</option><option value="OCCASION">Occasion</option></select></div>
+        <div class="field"><label>Livraison</label>
+          <select id="pLivraison">
+            <option value="LIVRAISON">Livraison</option>
+            <option value="MAIN_PROPRE">Remise en main propre</option>
+            <option value="LES_DEUX">Les deux</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Wilaya</label><input type="text" id="pWilaya" value="Alger" /></div>
+        <div class="field"><label>Commune</label><input type="text" id="pCommune" /></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="publishSubmit">Publier l'annonce</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal Détail produit ===== -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal wide"><button class="modal-close" data-close="detailOverlay">✕</button><div id="detailContent"></div></div>
+</div>
+
+<!-- ===== Page Checkout ===== -->
+<div class="overlay page" id="checkoutOverlay">
+  <div class="page-modal">
+    <div class="page-topbar"><button class="back-btn" data-close="checkoutOverlay">←</button><h2>Confirmer la commande</h2></div>
+    <div class="page-body">
+      <div id="checkoutProductSummary" style="display:flex;gap:12px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px;"></div>
+      <div class="form-error" id="checkoutError"></div>
+      <div class="field"><label>Nom complet</label><input type="text" id="coNom" /></div>
+      <div class="field"><label>Téléphone (ex: 0551234567)</label><input type="text" id="coTelephone" /></div>
+      <div class="field-row">
+        <div class="field"><label>Quantité</label><input type="number" id="coQuantite" value="1" min="1" /></div>
+        <div class="field"><label>Mode de livraison</label>
+          <select id="coLivraison"><option value="LIVRAISON">Livraison</option><option value="MAIN_PROPRE">Remise en main propre</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Wilaya</label><input type="text" id="coWilaya" /></div>
+        <div class="field"><label>Commune</label><input type="text" id="coCommune" /></div>
+      </div>
+      <div class="field"><label>Adresse</label><input type="text" id="coAdresse" placeholder="Adresse de livraison ou point de rendez-vous" /></div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px;margin:14px 0;font-size:13px;color:var(--text-light);">💳 Paiement à la livraison ou en main propre.</div>
+      <button class="btn btn-primary" style="width:100%" id="checkoutSubmit">Confirmer la commande</button>
+      <p style="text-align:center;font-size:12px;color:var(--text-light);margin-top:10px;">Tu n'as pas besoin de créer de compte pour acheter.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Page Chat ===== -->
+<div class="overlay page" id="chatOverlay">
+  <div class="page-modal chat-page">
+    <div class="page-topbar">
+      <button class="back-btn" id="chatBackBtn">←</button>
+      <div class="chat-peer"><div class="seller-avatar" id="chatAvatar">?</div><div style="min-width:0;"><div class="chat-title" id="chatTitle">Conversation</div><div class="chat-sub" id="chatSub"></div></div></div>
+    </div>
+    <div class="chat-product" id="chatProduct"></div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-quick" id="chatQuick"></div>
+    <div class="chat-input-bar"><input type="text" id="chatInput" placeholder="Écris un message..." autocomplete="off" /><button class="send-btn" id="chatSend" aria-label="Envoyer">➤</button></div>
+  </div>
+</div>
+
+<!-- ===== Page Liste ===== -->
+<div class="overlay page" id="listOverlay">
+  <div class="page-modal">
+    <div class="page-topbar"><button class="back-btn" data-close="listOverlay">←</button><h2 id="listTitle"></h2></div>
+    <div class="page-body" id="listContent" style="max-width:640px;"></div>
+  </div>
+</div>
+
+<!-- ===== Menu latéral (⋮) ===== -->
+<div class="drawer-overlay" id="drawerOverlay"><aside class="drawer" id="drawer"></aside></div>
+
+<!-- ===== Page Paramètres ===== -->
+<div class="overlay page" id="settingsOverlay">
+  <div class="page-modal">
+    <div class="page-topbar"><button class="back-btn" data-close="settingsOverlay">←</button><h2>Paramètres</h2></div>
+    <div class="page-body" id="settingsBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   SouqDZ — connecté à Supabase (base de données partagée)
+   ========================================================= */
+
+const SUPABASE_URL = "https://gjugtzwndhoostqcxtmj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xlIgooaJiyaxbq4o-eWuHA_dtdZSVps";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function applyTheme() {
+  const t = localStorage.getItem("souqdz_theme") || "light";
+  const dark = t === "dark" || (t === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.body.classList.toggle("dark", dark);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? "#0e1013" : "#0e7c66";
+}
+applyTheme();
+
+const CATEGORIES = [
+  { nom: "Téléphones", emoji: "📱" }, { nom: "Informatique", emoji: "💻" },
+  { nom: "Électronique", emoji: "🔌" }, { nom: "Mode", emoji: "👗" },
+  { nom: "Maison", emoji: "🏠" }, { nom: "Véhicules", emoji: "🚗" },
+  { nom: "Électroménager", emoji: "🧺" }, { nom: "Sport", emoji: "⚽" },
+  { nom: "Jeux vidéo", emoji: "🎮" }, { nom: "Beauté", emoji: "💄" },
+  { nom: "Services", emoji: "🛠️" }, { nom: "Autres", emoji: "📦" },
+];
+const WILAYAS = [
+  "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra","Béchar","Blida","Bouira",
+  "Tamanrasset","Tébessa","Tlemcen","Tiaret","Tizi Ouzou","Alger","Djelfa","Jijel","Sétif","Saïda",
+  "Skikda","Sidi Bel Abbès","Annaba","Guelma","Constantine","Médéa","Mostaganem","M'Sila","Mascara","Ouargla",
+  "Oran","El Bayadh","Illizi","Bordj Bou Arréridj","Boumerdès","El Tarf","Tindouf","Tissemsilt","El Oued","Khenchela",
+  "Souk Ahras","Tipaza","Mila","Aïn Defla","Naâma","Aïn Témouchent","Ghardaïa","Relizane","Timimoun","Bordj Badji Mokhtar",
+  "Ouled Djellal","Béni Abbès","In Salah","In Guezzam","Touggourt","Djanet","El M'Ghair","El Meniaa",
+];
+
+const DEFAULT_LOCATION = JSON.parse(localStorage.getItem("souqdz_location") || "null") || { ville: "Alger", lat: 36.7538, lng: 3.0588 };
+
+let currentProfile = null;
+let currentUserId = null;
+let profilesCache = {};
+let products = [];
+let productsLoadError = "";
+let favorites = [];
+let conversations = [];
+let orders = [];
+let reviews = [];
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function toast(msg, ms) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), ms || 3000);
+}
+function formatPrix(p) { return new Intl.NumberFormat("fr-DZ").format(p) + " DA"; }
+function emojiFor(nom) { const c = CATEGORIES.find(c => c.nom === nom); return c ? c.emoji : "🏷️"; }
+function initials(prenom, nom) { return ((prenom?.[0] || "") + (nom?.[0] || "")).toUpperCase(); }
+function currentUser() { return currentProfile; }
+function timeAgo(ts) {
+  if (!ts) return "";
+  const diff = Date.now() - ts; const min = Math.floor(diff / 60000);
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60); if (h < 24) return `${h} h`;
+  const d = Math.floor(h / 24); if (d < 7) return `${d} j`;
+  return new Date(ts).toLocaleDateString("fr-FR");
+}
+function esc(v) {
+  return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function unesc(v) {
+  return String(v == null ? "" : v).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+}
+function safeImages(arr) {
+  return (Array.isArray(arr) ? arr : []).filter(x => typeof x === "string" && /^data:image\/(jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x));
+}
+function cacheProfile(row) {
+  if (!row) return null;
+  const p = { id: row.id, prenom: esc(row.prenom || "Utilisateur"), nom: esc(row.nom || ""), telephone: esc(row.telephone || ""), wilaya: esc(row.wilaya || ""), commune: esc(row.commune || ""), createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now() };
+  profilesCache[p.id] = p;
+  return p;
+}
+function mapProductRow(row) {
+  if (row.profiles) cacheProfile(row.profiles);
+  return {
+    id: row.id, sellerId: row.seller_id, nom: esc(row.nom), description: esc(row.description),
+    prix: Number(row.prix), ancienPrix: row.ancien_prix ? Number(row.ancien_prix) : null,
+    categorie: esc(row.categorie), etat: row.etat, wilaya: esc(row.wilaya), commune: esc(row.commune),
+    livraison: row.livraison, images: safeImages(row.images), status: row.status,
+    vues: row.vues || 0, createdAt: new Date(row.created_at).getTime(),
+  };
+}
+function mapOrderRow(row) {
+  return { id: row.id, productId: row.product_id, sellerId: row.seller_id, buyerId: row.buyer_id,
+    productNom: esc(row.product_nom), quantite: Number(row.quantite) || 1, prixTotal: Number(row.prix_total),
+    nomAcheteur: esc(row.nom_acheteur), telephone: esc(row.telephone), wilaya: esc(row.wilaya), commune: esc(row.commune),
+    adresse: esc(row.adresse), modeLivraison: row.mode_livraison, status: row.status, createdAt: new Date(row.created_at).getTime() };
+}
+function mapConversationRow(row) { return { id: row.id, productId: row.product_id, buyerId: row.buyer_id, sellerId: row.seller_id, createdAt: new Date(row.created_at).getTime() }; }
+function mapMessageRow(row) { return { id: row.id, conversationId: row.conversation_id, senderId: row.sender_id, contenu: esc(row.contenu), isRead: row.is_read, createdAt: new Date(row.created_at).getTime() }; }
+function mapReviewRow(row) { return { id: row.id, orderId: row.order_id, buyerId: row.buyer_id, sellerId: row.seller_id, note: Number(row.note) || 0, commentaire: esc(row.commentaire), createdAt: new Date(row.created_at).getTime() }; }
+
+function discountPercent(p) { if (!p.ancienPrix || p.ancienPrix <= p.prix) return 0; return Math.round((1 - p.prix / p.ancienPrix) * 100); }
+function soldCount(productId) { return orders.filter(o => o.productId === productId && o.status === "LIVREE").length; }
+function sellerRating(sellerId) {
+  const rs = reviews.filter(r => r.sellerId === sellerId);
+  if (!rs.length) return null;
+  const avg = rs.reduce((s, r) => s + r.note, 0) / rs.length;
+  return { avg: Math.round(avg * 10) / 10, count: rs.length };
+}
+function starsHtml(avg) { const full = Math.round(avg); return "⭐".repeat(full) + "☆".repeat(5 - full); }
+
+/* ---------- Chargement Supabase ---------- */
+async function refreshProducts() {
+  // Deux requêtes séparées (produits puis profils) : plus robuste qu'une jointure
+  const { data, error } = await sb.from("products").select("*").order("created_at", { ascending: false });
+  if (error) {
+    console.error("refreshProducts: " + (error.message || JSON.stringify(error)));
+    productsLoadError = error.message || JSON.stringify(error);
+    toast("Erreur chargement produits : " + productsLoadError, 7000);
+    return;
+  }
+  productsLoadError = "";
+  const rows = data || [];
+  const ids = [...new Set(rows.map(r => r.seller_id).filter(Boolean))];
+  if (ids.length) {
+    const { data: profs, error: pErr } = await sb.from("profiles").select("id,prenom,nom,telephone,wilaya,commune,created_at").in("id", ids);
+    if (pErr) console.error("refreshProducts/profiles: " + (pErr.message || JSON.stringify(pErr)));
+    else (profs || []).forEach(cacheProfile);
+  }
+  products = rows.map(mapProductRow);
+}
+async function refreshFavorites() {
+  if (!currentUserId) { favorites = []; return; }
+  const { data, error } = await sb.from("favorites").select("*").eq("user_id", currentUserId);
+  if (error) { console.error(error); return; }
+  favorites = (data || []).map(r => ({ userId: r.user_id, productId: r.product_id }));
+}
+async function refreshOrders() {
+  if (!currentUserId) { orders = []; return; }
+  const { data, error } = await sb.from("orders").select("*").or(`buyer_id.eq.${currentUserId},seller_id.eq.${currentUserId}`).order("created_at", { ascending: false });
+  if (error) { console.error(error); return; }
+  orders = (data || []).map(mapOrderRow);
+}
+async function refreshAllReviews() {
+  const sellerIds = [...new Set(products.map(p => p.sellerId))];
+  if (!sellerIds.length) { reviews = []; return; }
+  const { data, error } = await sb.from("reviews").select("*").in("seller_id", sellerIds);
+  if (error) { console.error(error); return; }
+  reviews = (data || []).map(mapReviewRow);
+}
+async function refreshConversations() {
+  if (!currentUserId) { conversations = []; return; }
+  const { data, error } = await sb.from("conversations").select("*").or(`buyer_id.eq.${currentUserId},seller_id.eq.${currentUserId}`);
+  if (error) { console.error(error); return; }
+  conversations = (data || []).map(mapConversationRow);
+}
+async function loadInitialData() {
+  await refreshProducts();
+  await refreshAllReviews();
+  if (currentUserId) await Promise.all([refreshFavorites(), refreshOrders(), refreshConversations()]);
+  renderCategories(); renderProducts(); renderHeader();
+}
+
+/* ---------- Session ---------- */
+async function initSession() {
+  const { data: { session }, error: sessErr } = await sb.auth.getSession();
+  if (sessErr) { console.error(sessErr); return; }
+  if (session?.user) {
+    const { data: profile, error } = await sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+    if (error) { console.error(error); return; }
+    if (profile) { currentProfile = cacheProfile(profile); currentUserId = currentProfile.id; }
+    else { console.warn("Session active mais aucun profil trouvé pour", session.user.id); }
+  }
+}
+
+/* ---------- Header ---------- */
+let unreadMessages = 0;
+let pendingOrders = 0;
+function renderHeader() {
+  const box = document.getElementById("headerActions");
+  const user = currentUser();
+  const attention = unreadMessages + pendingOrders;
+  box.innerHTML = `
+    ${user ? "" : `<button class="icon-btn" id="loginBtn" title="Connexion">👤</button>`}
+    <button class="btn btn-primary" id="publishBtn" title="Publier une annonce">＋<span class="pub-label"> Publier une annonce</span></button>
+    <button class="icon-btn" id="menuBtn" title="Menu">⋮<span class="dot ${attention ? 'show' : ''}"></span></button>`;
+  const lb = document.getElementById("loginBtn");
+  if (lb) lb.onclick = () => openAuthModal("login");
+  document.getElementById("publishBtn").onclick = openPublishModal;
+  document.getElementById("menuBtn").onclick = openDrawer;
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentProfile = null; currentUserId = null; favorites = []; orders = []; conversations = [];
+  unreadMessages = 0; pendingOrders = 0;
+  renderHeader(); renderProducts(); toast("Déconnecté.");
+}
+
+/* ---------- Menu latéral (⋮) ---------- */
+function openDrawer() { renderDrawer(); document.getElementById("drawerOverlay").classList.add("show"); }
+function closeDrawer() { document.getElementById("drawerOverlay").classList.remove("show"); }
+document.getElementById("drawerOverlay").addEventListener("click", (e) => { if (e.target.id === "drawerOverlay") closeDrawer(); });
+function renderDrawer() {
+  const user = currentUser();
+  const d = document.getElementById("drawer");
+  const item = (ico, label, act, count) => `<button class="drawer-item" data-act="${act}"><span class="ico">${ico}</span><span>${label}</span>${count ? `<span class="count">${count}</span>` : ""}</button>`;
+  d.innerHTML = user ? `
+    <div class="drawer-head"><div class="drawer-avatar">${initials(unesc(user.prenom), unesc(user.nom))}</div>
+      <div style="min-width:0;"><div style="font-weight:800;font-size:16px;">${user.prenom} ${user.nom}</div>
+      <div style="font-size:12px;opacity:0.9;">📍 ${user.wilaya}${user.commune ? ", " + user.commune : ""}</div>
+      <div style="font-size:12px;opacity:0.9;">📞 ${user.telephone}</div></div></div>
+    ${item("➕", "Publier une annonce", "publish")}
+    ${item("📣", "Mes annonces", "mesannonces")}
+    ${item("🛒", "Mes commandes", "mescommandes")}
+    ${item("📦", "Commandes reçues", "commandes", pendingOrders)}
+    ${item("💬", "Messages", "messages", unreadMessages)}
+    ${item("♡", "Mes favoris", "favoris")}
+    <div class="drawer-sep"></div>
+    ${item("⚙️", "Paramètres", "settings")}
+    ${item("🚪", "Déconnexion", "logout")}
+  ` : `
+    <div class="drawer-head"><div class="drawer-avatar">🛍️</div><div><div style="font-weight:800;font-size:16px;">Bienvenue sur SouqDZ</div><div style="font-size:12px;opacity:0.9;">Connecte-toi pour acheter et vendre</div></div></div>
+    ${item("🔑", "Connexion", "login")}
+    ${item("✨", "Inscription", "register")}
+    ${item("➕", "Publier une annonce", "publish")}
+    ${item("♡", "Mes favoris", "favoris")}
+    <div class="drawer-sep"></div>
+    ${item("⚙️", "Paramètres", "settings")}
+  `;
+  d.querySelectorAll("[data-act]").forEach(b => b.onclick = () => drawerAction(b.dataset.act));
+}
+async function drawerAction(act) {
+  closeDrawer();
+  if (act === "publish") return openPublishModal();
+  if (act === "login") return openAuthModal("login");
+  if (act === "register") return openAuthModal("register");
+  if (act === "settings") return openSettings();
+  if (act === "logout") return doLogout();
+  handleNav(act);
+}
+
+/* ---------- Paramètres ---------- */
+async function openSettings() {
+  const user = currentUser();
+  const theme = localStorage.getItem("souqdz_theme") || "light";
+  let email = "";
+  if (user) { const { data: { session } } = await sb.auth.getSession(); email = (session && session.user && session.user.email) || ""; }
+  const notifSupported = "Notification" in window;
+  const notifState = !notifSupported ? "Non disponible sur cet appareil (sur iPhone : ajoute d'abord le site à l'écran d'accueil)"
+    : Notification.permission === "granted" ? "Activées ✅" : Notification.permission === "denied" ? "Bloquées — à réactiver dans les réglages du téléphone" : "Désactivées";
+  document.getElementById("settingsBody").innerHTML = `
+    <div class="settings-card"><h3>🎨 Apparence</h3>
+      <div class="theme-options">${[["light", "Clair"], ["dark", "Sombre"], ["auto", "Auto"]].map(([v, l]) => `<button class="theme-opt ${theme === v ? 'active' : ''}" data-theme="${v}">${l}</button>`).join("")}</div>
+    </div>
+    ${user ? `<div class="settings-card"><h3>👤 Mon profil</h3>
+      <div class="form-error" id="setError"></div><div class="form-ok" id="setOk"></div>
+      <div class="field"><label>Email</label><input type="text" value="${esc(email)}" disabled /></div>
+      <div class="field-row"><div class="field"><label>Prénom</label><input type="text" id="setPrenom" value="${user.prenom}" /></div>
+        <div class="field"><label>Nom</label><input type="text" id="setNom" value="${user.nom}" /></div></div>
+      <div class="field"><label>Téléphone</label><input type="text" id="setTel" value="${user.telephone}" /></div>
+      <div class="field-row"><div class="field"><label>Wilaya</label><input type="text" id="setWilaya" value="${user.wilaya}" /></div>
+        <div class="field"><label>Commune</label><input type="text" id="setCommune" value="${user.commune}" /></div></div>
+      <button class="btn btn-primary" style="width:100%" id="setSave">Enregistrer</button>
+    </div>` : ""}
+    <div class="settings-card"><h3>🔔 Notifications</h3>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:10px;">État : ${notifState}</p>
+      ${notifSupported && Notification.permission === "default" ? `<button class="btn btn-outline" id="setNotif">Activer les notifications</button>` : ""}
+    </div>
+    ${user ? `<button class="btn btn-outline" style="width:100%;color:#b91c1c;border-color:#f3c9c9;" id="setLogout">🚪 Déconnexion</button>` : ""}`;
+
+  document.querySelectorAll(".theme-opt").forEach(b => b.onclick = () => {
+    localStorage.setItem("souqdz_theme", b.dataset.theme); applyTheme();
+    document.querySelectorAll(".theme-opt").forEach(x => x.classList.toggle("active", x === b));
+  });
+  const sn = document.getElementById("setNotif");
+  if (sn) sn.onclick = async () => { await askNotifPermission(); openSettings(); };
+  const sl = document.getElementById("setLogout");
+  if (sl) sl.onclick = async () => { hideOverlay("settingsOverlay"); await doLogout(); };
+  const ss = document.getElementById("setSave");
+  if (ss) ss.onclick = async () => {
+    const errEl = document.getElementById("setError"), okEl = document.getElementById("setOk");
+    errEl.classList.remove("show"); okEl.classList.remove("show");
+    const prenom = document.getElementById("setPrenom").value.trim(), nom = document.getElementById("setNom").value.trim();
+    const telephone = document.getElementById("setTel").value.trim();
+    const wilaya = document.getElementById("setWilaya").value.trim(), commune = document.getElementById("setCommune").value.trim();
+    if (!prenom || !nom || !wilaya || !commune) { errEl.textContent = "Merci de remplir tous les champs."; errEl.classList.add("show"); return; }
+    if (!/^0[5-7][0-9]{8}$/.test(telephone)) { errEl.textContent = "Numéro de téléphone invalide (ex: 0551234567)."; errEl.classList.add("show"); return; }
+    ss.disabled = true;
+    const { error } = await sb.from("profiles").update({ prenom, nom, telephone, wilaya, commune }).eq("id", currentUserId);
+    ss.disabled = false;
+    if (error) { errEl.textContent = "Erreur : " + error.message; errEl.classList.add("show"); return; }
+    currentProfile = cacheProfile({ id: currentUserId, prenom, nom, telephone, wilaya, commune, created_at: new Date(currentProfile.createdAt).toISOString() });
+    okEl.textContent = "✅ Profil mis à jour"; okEl.classList.add("show");
+    renderHeader(); renderProducts();
+  };
+  showOverlay("settingsOverlay");
+}
+
+/* ---------- Notifications (messages reçus / nouvelles commandes) ---------- */
+async function askNotifPermission() {
+  if (!("Notification" in window)) { toast("Notifications non supportées ici."); return; }
+  const res = await Notification.requestPermission();
+  toast(res === "granted" ? "🔔 Notifications activées" : "Notifications refusées.");
+  renderHeader();
+}
+function notify(title, body) {
+  toast(title + " — " + body, 5000);
+  if ("Notification" in window && Notification.permission === "granted") {
+    try { new Notification(title, { body, icon: "icon-192.png" }); } catch (e) {}
+  }
+  if (navigator.vibrate) navigator.vibrate(200);
+}
+let lastUnread = null, lastPending = null, notifBaselineUser = null;
+async function checkNotifications() {
+  if (!currentUserId) return;
+  if (notifBaselineUser !== currentUserId) { lastUnread = null; lastPending = null; notifBaselineUser = currentUserId; }
+  await refreshConversations();
+  const ids = conversations.map(c => c.id);
+  let unread = 0;
+  if (ids.length) {
+    const { data, error } = await sb.from("messages").select("id").in("conversation_id", ids).neq("sender_id", currentUserId).eq("is_read", false);
+    if (!error) unread = (data || []).length;
+  }
+  await refreshOrders();
+  const pending = orders.filter(o => o.sellerId === currentUserId && o.status === "EN_ATTENTE").length;
+  if (lastUnread !== null) {
+    if (unread > lastUnread) notify("💬 Nouveau message", "Tu as reçu un nouveau message.");
+    if (pending > lastPending) notify("📦 Nouvelle commande", "Un client vient de commander un de tes produits.");
+  }
+  lastUnread = unread; lastPending = pending;
+  unreadMessages = unread; pendingOrders = pending;
+  renderHeader();
+}
+document.querySelectorAll(".header-nav [data-nav]").forEach(el => el.onclick = () => handleNav(el.dataset.nav));
+document.getElementById("heroPublish").onclick = openPublishModal;
+document.getElementById("logoHome").onclick = (e) => { e.preventDefault(); document.getElementById("produits").scrollIntoView({behavior:"smooth"}); };
+document.getElementById("refreshBtn").onclick = async () => { toast("Actualisation..."); await loadInitialData(); toast("Mis à jour ✅"); };
+
+async function handleNav(target) {
+  if (target === "categories" || target === "produits") { document.getElementById(target).scrollIntoView({ behavior: "smooth" }); return; }
+  const user = currentUser();
+  if (!user) { openAuthModal("login"); toast("Connecte-toi d'abord."); return; }
+  if (target === "favoris") { await refreshFavorites(); openListModal("Mes favoris", myFavoritesList); }
+  if (target === "messages") { await refreshInbox(); openListModal("Mes messages", myConversationsList); }
+  if (target === "mesannonces") openListModal("Mes annonces", myAnnoncesList);
+  if (target === "commandes") { await refreshOrders(); openListModal("Commandes reçues", receivedOrdersList); }
+  if (target === "mescommandes") { await refreshOrders(); openListModal("Mes commandes", myOrdersList); }
+}
+
+/* ---------- Catégories ---------- */
+let activeCategory = null;
+function renderCategories() {
+  const grid = document.getElementById("categoriesGrid");
+  grid.innerHTML = CATEGORIES.map(c => `<div class="category-card ${activeCategory === c.nom ? 'active' : ''}" data-cat="${c.nom}"><div class="emoji">${c.emoji}</div><div class="name">${c.nom}</div></div>`).join("");
+  grid.querySelectorAll("[data-cat]").forEach(el => el.onclick = () => {
+    activeCategory = activeCategory === el.dataset.cat ? null : el.dataset.cat;
+    document.getElementById("clearFilterBtn").style.display = activeCategory ? "inline-block" : "none";
+    renderCategories(); renderProducts();
+  });
+}
+document.getElementById("clearFilterBtn").onclick = () => {
+  activeCategory = null;
+  document.getElementById("searchInput").value = "";
+  document.getElementById("filterWilaya").value = "";
+  document.getElementById("filterPrixMin").value = "";
+  document.getElementById("filterPrixMax").value = "";
+  document.getElementById("filterTri").value = "recent";
+  document.getElementById("clearFilterBtn").style.display = "none";
+  renderCategories(); renderProducts();
+};
+function populateWilayaSelect() {
+  const sel = document.getElementById("filterWilaya");
+  WILAYAS.forEach(w => { const o = document.createElement("option"); o.value = w; o.textContent = w; sel.appendChild(o); });
+}
+
+/* ---------- Produits ---------- */
+function renderPromos() {
+  const sec = document.getElementById("promos"), row = document.getElementById("promosRow");
+  const promos = products.filter(p => p.status === "ACTIVE" && discountPercent(p) > 0)
+    .sort((a, b) => discountPercent(b) - discountPercent(a)).slice(0, 20);
+  if (!promos.length) { sec.style.display = "none"; return; }
+  sec.style.display = "block";
+  row.innerHTML = promos.map(p => `<div class="promo-card" data-promo="${p.id}">
+    <div class="product-image"><span class="discount-ribbon">-${discountPercent(p)}%</span>${p.images[0] ? `<img src="${p.images[0]}" />` : "🖼️"}</div>
+    <div class="product-body">
+      <div class="product-name">${p.nom}</div>
+      <div class="product-price" style="margin-bottom:2px;">${formatPrix(p.prix)}</div>
+      <div style="font-size:12px;color:var(--text-light);text-decoration:line-through;">${formatPrix(p.ancienPrix)}</div>
+    </div></div>`).join("");
+  row.querySelectorAll("[data-promo]").forEach(el => el.onclick = () => openProductDetail(el.dataset.promo));
+}
+function renderProducts() {
+  renderPromos();
+  const grid = document.getElementById("productsGrid");
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const wilaya = document.getElementById("filterWilaya").value;
+  const prixMin = parseFloat(document.getElementById("filterPrixMin").value);
+  const prixMax = parseFloat(document.getElementById("filterPrixMax").value);
+  const tri = document.getElementById("filterTri").value;
+
+  let list = products.filter(p => p.status === "ACTIVE");
+  if (activeCategory) list = list.filter(p => p.categorie === activeCategory);
+  if (q) list = list.filter(p => p.nom.toLowerCase().includes(q) || (p.description||"").toLowerCase().includes(q));
+  if (wilaya) list = list.filter(p => p.wilaya === wilaya);
+  if (!isNaN(prixMin)) list = list.filter(p => p.prix >= prixMin);
+  if (!isNaN(prixMax)) list = list.filter(p => p.prix <= prixMax);
+  list = [...list].sort((a, b) => tri === "prix_asc" ? a.prix - b.prix : tri === "prix_desc" ? b.prix - a.prix : b.createdAt - a.createdAt);
+
+  if (!list.length && productsLoadError) {
+    grid.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div><p><strong>Impossible de charger les annonces.</strong></p><p style="margin-top:8px;font-size:12px;word-break:break-word;">${productsLoadError}</p><button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('refreshBtn').click()">Réessayer</button></div>`;
+    return;
+  }
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p><strong>Aucune annonce pour le moment.</strong></p><p style="margin-top:6px;">Sois le premier à publier un produit sur SouqDZ !</p><button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('heroPublish').click()">Publier une annonce</button></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p => {
+    const seller = profilesCache[p.sellerId];
+    const isFav = currentUserId && favorites.some(f => f.userId === currentUserId && f.productId === p.id);
+    const disc = discountPercent(p); const sold = soldCount(p.id); const rating = seller ? sellerRating(seller.id) : null;
+    return `<div class="product-card" data-id="${p.id}">
+      <div class="product-image">
+        <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${p.id}">${isFav ? '❤️' : '♡'}</button>
+        ${disc ? `<span class="discount-ribbon">-${disc}%</span>` : ""}
+        ${p.images[0] ? `<img src="${p.images[0]}" />` : "🖼️"}
+      </div>
+      <div class="product-body">
+        <div class="product-name">${p.nom}</div>
+        <div style="display:flex;align-items:baseline;gap:6px;">
+          <div class="product-price">${formatPrix(p.prix)}</div>
+          ${p.ancienPrix ? `<span style="font-size:12px;color:var(--text-light);text-decoration:line-through;">${formatPrix(p.ancienPrix)}</span>` : ""}
+        </div>
+        <div class="product-meta"><span>${p.wilaya}</span><span class="badge">${p.etat === "NEUF" ? "Neuf" : "Occasion"}</span></div>
+        <div class="product-meta"><span>${rating ? `⭐ ${rating.avg} (${rating.count})` : (seller ? seller.prenom : "—")}</span>${sold ? `<span>${sold} vendu${sold > 1 ? "s" : ""}</span>` : ""}</div>
+        <button class="btn btn-primary">Voir le produit</button>
+      </div></div>`;
+  }).join("");
+  grid.querySelectorAll(".product-card").forEach(card => card.addEventListener("click", (e) => { if (e.target.closest("[data-fav]")) return; openProductDetail(card.dataset.id); }));
+  grid.querySelectorAll("[data-fav]").forEach(btn => btn.addEventListener("click", (e) => { e.stopPropagation(); toggleFavorite(btn.dataset.fav); }));
+}
+document.getElementById("searchInput").addEventListener("input", renderProducts);
+document.getElementById("filterWilaya").addEventListener("change", renderProducts);
+document.getElementById("filterPrixMin").addEventListener("input", renderProducts);
+document.getElementById("filterPrixMax").addEventListener("input", renderProducts);
+document.getElementById("filterTri").addEventListener("change", renderProducts);
+
+async function toggleFavorite(productId) {
+  const user = currentUser();
+  if (!user) { openAuthModal("login"); toast("Connecte-toi pour ajouter aux favoris."); return; }
+  const exists = favorites.some(f => f.userId === user.id && f.productId === productId);
+  if (exists) {
+    const { error } = await sb.from("favorites").delete().eq("user_id", user.id).eq("product_id", productId);
+    if (error) { toast("Erreur : " + error.message, 4000); return; }
+    favorites = favorites.filter(f => !(f.userId === user.id && f.productId === productId));
+  } else {
+    const { error } = await sb.from("favorites").insert({ user_id: user.id, product_id: productId });
+    if (error) { toast("Erreur : " + error.message, 4000); return; }
+    favorites.push({ userId: user.id, productId });
+  }
+  renderProducts(); renderHeader();
+}
+
+/* ---------- Détail produit ---------- */
+let detailImgIndex = 0;
+function openProductDetail(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  const sellerId = p.sellerId; const seller = profilesCache[sellerId];
+  const isOwner = currentUserId && sellerId === currentUserId;
+  detailImgIndex = 0;
+
+  const render = () => {
+    const isFav = currentUserId && favorites.some(f => f.userId === currentUserId && f.productId === p.id);
+    document.getElementById("detailContent").innerHTML = `
+      <div class="detail-gallery">${p.images.length ? `<img src="${p.images[detailImgIndex]}" />` : "🖼️"}</div>
+      ${p.images.length > 1 ? `<div class="detail-thumbs">${p.images.map((img, i) => `<img src="${img}" class="${i === detailImgIndex ? 'active' : ''}" data-i="${i}" />`).join("")}</div>` : ""}
+      <h2>${p.nom}</h2>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0;">
+        <div class="product-price" style="font-size:22px;">${formatPrix(p.prix)}</div>
+        ${p.ancienPrix ? `<span style="font-size:14px;color:var(--text-light);text-decoration:line-through;">${formatPrix(p.ancienPrix)}</span><span class="badge" style="background:#fdeaea;color:#c62828;">-${discountPercent(p)}%</span>` : ""}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <span class="badge">${p.etat === "NEUF" ? "Neuf" : "Occasion"}</span>
+        <span class="badge">${p.wilaya}${p.commune ? ", " + p.commune : ""}</span>
+        <span class="badge">${p.livraison === "LIVRAISON" ? "Livraison" : p.livraison === "MAIN_PROPRE" ? "Main propre" : "Livraison ou main propre"}</span>
+        ${soldCount(p.id) ? `<span class="badge">${soldCount(p.id)} vendu${soldCount(p.id) > 1 ? "s" : ""}</span>` : ""}
+        ${isOwner ? `<span class="badge" style="background:#fdf1d8;color:#946200;">Ton annonce · ${p.status === 'ACTIVE' ? 'Active' : p.status === 'VENDUE' ? 'Vendue' : 'Désactivée'}</span>` : ""}
+      </div>
+      <p style="color:var(--text-light);font-size:14px;">${p.description}</p>
+      <div class="seller-box" id="sellerBoxLink" style="cursor:pointer;">
+        <div class="seller-avatar">${seller ? initials(seller.prenom, seller.nom) : "?"}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:14px;">${seller ? seller.prenom + " " + seller.nom : "Vendeur"}${isOwner ? " (toi)" : ""}</div>
+          <div style="font-size:12px;color:var(--text-light);">${seller ? seller.wilaya : ""}${(() => { const r = sellerRating(sellerId); return r ? ` · ⭐ ${r.avg} (${r.count})` : ""; })()}</div>
+        </div>
+        <span style="color:var(--text-light);font-size:13px;">Voir la boutique ›</span>
+      </div>
+      <div class="detail-actions">
+        ${isOwner ? `
+          <button class="btn btn-outline" id="btnToggleStatus">${p.status === 'ACTIVE' ? '✔ Marquer vendu' : '↺ Réactiver'}</button>
+          <button class="btn btn-outline" id="btnDeleteOwn" style="color:#b91c1c;border-color:#f3c9c9;">🗑️ Supprimer</button>
+        ` : `
+          <button class="btn btn-primary" id="btnBuy">🛒 Acheter</button>
+          <button class="btn btn-outline" id="btnContact">💬 Contacter le vendeur</button>
+          <button class="btn btn-outline" id="btnFav">${isFav ? "❤️ Dans mes favoris" : "♡ Ajouter aux favoris"}</button>
+        `}
+      </div>
+      ${similarProductsHtml(p)}
+    `;
+    document.querySelectorAll(".detail-thumbs img").forEach(img => img.onclick = () => { detailImgIndex = +img.dataset.i; render(); });
+    if (seller) document.getElementById("sellerBoxLink").onclick = () => openSellerShop(seller.id);
+    document.querySelectorAll("[data-similar]").forEach(card => card.onclick = () => openProductDetail(card.dataset.similar));
+    if (isOwner) {
+      document.getElementById("btnToggleStatus").onclick = async () => {
+        const newStatus = p.status === "ACTIVE" ? "VENDUE" : "ACTIVE";
+        const { error } = await sb.from("products").update({ status: newStatus }).eq("id", p.id);
+        if (error) { toast("Erreur : " + error.message, 4000); return; }
+        p.status = newStatus; render(); renderProducts();
+        toast(newStatus === "VENDUE" ? "Annonce marquée comme vendue." : "Annonce réactivée.");
+      };
+      document.getElementById("btnDeleteOwn").onclick = async () => {
+        if (!confirm("Supprimer définitivement cette annonce ?")) return;
+        const r = await deleteProductSafe(p.id);
+        if (!r.ok) return;
+        hideOverlay("detailOverlay"); renderProducts();
+        toast(r.soft ? "Annonce retirée de la vente (elle a des commandes, l'historique est conservé)." : "Annonce supprimée.", 5000);
+      };
+    } else {
+      document.getElementById("btnFav").onclick = () => { toggleFavorite(p.id); render(); };
+      document.getElementById("btnContact").onclick = () => openChat(p.id);
+      document.getElementById("btnBuy").onclick = () => openCheckout(p.id);
+    }
+  };
+  render();
+  showOverlay("detailOverlay");
+}
+function similarProductsHtml(p) {
+  const similar = products.filter(x => x.id !== p.id && x.categorie === p.categorie && x.status === "ACTIVE").slice(0, 4);
+  if (!similar.length) return "";
+  return `<div style="margin-top:22px;"><h3 style="font-size:15px;margin-bottom:10px;">Produits similaires</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
+      ${similar.map(s => `<div data-similar="${s.id}" style="cursor:pointer;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div style="aspect-ratio:1;background:var(--img-bg);display:flex;align-items:center;justify-content:center;">${s.images[0] ? `<img src="${s.images[0]}" style="width:100%;height:100%;object-fit:cover;"/>` : "🖼️"}</div>
+        <div style="padding:8px;"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nom}</div><div style="font-size:13px;color:var(--primary);font-weight:700;">${formatPrix(s.prix)}</div></div>
+      </div>`).join("")}
+    </div></div>`;
+}
+
+/* ---------- Boutique vendeur ---------- */
+function openSellerShop(sellerId) {
+  const seller = profilesCache[sellerId];
+  if (!seller) return;
+  openListModal(seller.prenom + " " + seller.nom, () => sellerShopHtml(seller));
+}
+function sellerShopHtml(seller) {
+  const sellerProducts = products.filter(p => p.sellerId === seller.id && p.status === "ACTIVE");
+  const rating = sellerRating(seller.id);
+  const joinDate = new Date(seller.createdAt || Date.now()).toLocaleDateString("fr-FR", { year: "numeric", month: "long" });
+  return `<div style="display:flex;gap:14px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px;">
+    <div class="seller-avatar" style="width:56px;height:56px;font-size:20px;">${initials(seller.prenom, seller.nom)}</div>
+    <div style="flex:1;">
+      <div style="font-weight:800;font-size:16px;">${seller.prenom} ${seller.nom}</div>
+      <div style="font-size:12px;color:var(--text-light);">📍 ${seller.wilaya} · Membre depuis ${joinDate}</div>
+      <div style="font-size:13px;margin-top:4px;">${rating ? `${starsHtml(rating.avg)} ${rating.avg}/5 (${rating.count} avis)` : "Pas encore d'avis"} · ${sellerProducts.length} annonce${sellerProducts.length > 1 ? "s" : ""}</div>
+    </div></div>
+    ${sellerProducts.length ? `<div class="products-grid">${sellerProducts.map(p => `<div class="product-card" onclick="hideOverlay('listOverlay');openProductDetail('${p.id}')">
+        <div class="product-image">${p.images[0] ? `<img src="${p.images[0]}"/>` : "🖼️"}</div>
+        <div class="product-body"><div class="product-name">${p.nom}</div><div class="product-price">${formatPrix(p.prix)}</div></div>
+      </div>`).join("")}</div>` : `<p style="color:var(--text-light);">Ce vendeur n'a aucune annonce active pour le moment.</p>`}`;
+}
+
+/* ---------- Publier ---------- */
+let pendingPhotos = [];
+function populateCategorySelect() {
+  document.getElementById("pCategorie").innerHTML = CATEGORIES.map(c => `<option value="${c.nom}">${c.emoji} ${c.nom}</option>`).join("");
+}
+function openPublishModal() {
+  const user = currentUser();
+  if (!user) { openAuthModal("register"); toast("Crée un compte pour publier une annonce."); return; }
+  pendingPhotos = [];
+  document.getElementById("photoPreviews").innerHTML = "";
+  document.getElementById("pNom").value = "";
+  document.getElementById("pDescription").value = "";
+  document.getElementById("pPrix").value = "";
+  document.getElementById("pAncienPrix").value = "";
+  document.getElementById("pWilaya").value = user.wilaya || "Alger";
+  document.getElementById("pCommune").value = user.commune || "";
+  document.getElementById("publishError").classList.remove("show");
+  showOverlay("publishOverlay");
+}
+document.getElementById("photoUploadZone").onclick = () => document.getElementById("photoInput").click();
+function compressImage(file, maxSize, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById("photoInput").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files).slice(0, 6 - pendingPhotos.length);
+  e.target.value = "";
+  for (const file of files) {
+    try { pendingPhotos.push(await compressImage(file, 900, 0.7)); }
+    catch (err) { toast("Photo illisible, essaie une autre."); }
+  }
+  renderPhotoPreviews();
+});
+function renderPhotoPreviews() {
+  document.getElementById("photoPreviews").innerHTML = pendingPhotos.map((src, i) => `<div class="thumb"><img src="${src}" /><button class="rm" data-i="${i}">✕</button></div>`).join("");
+  document.querySelectorAll(".photo-previews .rm").forEach(btn => btn.onclick = () => { pendingPhotos.splice(+btn.dataset.i, 1); renderPhotoPreviews(); });
+}
+document.getElementById("publishSubmit").onclick = async () => {
+  const errEl = document.getElementById("publishError");
+  if (!currentUserId) { errEl.textContent = "Tu dois être connecté pour publier."; errEl.classList.add("show"); return; }
+  const nom = document.getElementById("pNom").value.trim();
+  const description = document.getElementById("pDescription").value.trim();
+  const prix = parseFloat(document.getElementById("pPrix").value);
+  const ancienPrixRaw = document.getElementById("pAncienPrix").value;
+  const ancienPrix = ancienPrixRaw ? parseFloat(ancienPrixRaw) : null;
+  const categorie = document.getElementById("pCategorie").value;
+  const etat = document.getElementById("pEtat").value;
+  const livraison = document.getElementById("pLivraison").value;
+  const wilaya = document.getElementById("pWilaya").value.trim();
+  const commune = document.getElementById("pCommune").value.trim();
+
+  if (!nom || !description || !prix || prix <= 0 || !wilaya || !commune) {
+    errEl.textContent = "Merci de remplir tous les champs obligatoires (prix inclus).";
+    errEl.classList.add("show"); return;
+  }
+  errEl.classList.remove("show");
+  const btn = document.getElementById("publishSubmit");
+  btn.disabled = true; btn.textContent = "Publication...";
+
+  const { error } = await sb.from("products").insert({
+    seller_id: currentUserId, nom, description, prix,
+    ancien_prix: (ancienPrix && ancienPrix > prix) ? ancienPrix : null,
+    categorie, etat, wilaya, commune, livraison,
+    images: pendingPhotos.slice(), status: "ACTIVE",
+  });
+
+  btn.disabled = false; btn.textContent = "Publier l'annonce";
+
+  if (error) {
+    console.error("publish error:", error);
+    errEl.textContent = "Échec de publication : " + error.message;
+    errEl.classList.add("show");
+    return;
+  }
+  hideOverlay("publishOverlay");
+  toast("✅ Annonce publiée avec succès !");
+  await refreshProducts(); renderProducts();
+};
+
+/* ---------- Authentification ---------- */
+function openAuthModal(tab) {
+  document.getElementById("loginError").classList.remove("show");
+  document.getElementById("registerError").classList.remove("show");
+  document.getElementById("registerOk").classList.remove("show");
+  switchAuthTab(tab || "login");
+  showOverlay("authOverlay");
+}
+function switchAuthTab(tab) {
+  document.getElementById("tabLogin").classList.toggle("active", tab === "login");
+  document.getElementById("tabRegister").classList.toggle("active", tab === "register");
+  document.getElementById("loginForm").style.display = tab === "login" ? "block" : "none";
+  document.getElementById("registerForm").style.display = tab === "register" ? "block" : "none";
+  document.getElementById("authPageTitle").textContent = tab === "login" ? "Connexion" : "Inscription";
+}
+document.getElementById("tabLogin").onclick = () => switchAuthTab("login");
+document.getElementById("tabRegister").onclick = () => switchAuthTab("register");
+
+document.getElementById("loginSubmit").onclick = async () => {
+  const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+  errEl.classList.remove("show");
+  if (!email || !password) { errEl.textContent = "Email et mot de passe requis."; errEl.classList.add("show"); return; }
+
+  const btn = document.getElementById("loginSubmit");
+  btn.disabled = true; btn.textContent = "Connexion...";
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = "Se connecter";
+
+  if (error) { errEl.textContent = error.message; errEl.classList.add("show"); return; }
+
+  const { data: profile, error: profErr } = await sb.from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+  if (profErr) { errEl.textContent = "Erreur de chargement du profil : " + profErr.message; errEl.classList.add("show"); return; }
+  if (!profile) { errEl.textContent = "Ton compte existe mais ton profil est introuvable. Réessaie de t'inscrire."; errEl.classList.add("show"); return; }
+
+  currentProfile = cacheProfile(profile); currentUserId = currentProfile.id;
+  renderHeader();
+  await Promise.all([refreshFavorites(), refreshOrders(), refreshConversations()]);
+  renderProducts();
+  hideOverlay("authOverlay");
+  toast(`Bienvenue, ${currentProfile.prenom} !`);
+  checkNotifications();
+};
+
+document.getElementById("registerSubmit").onclick = async () => {
+  const prenom = document.getElementById("regPrenom").value.trim();
+  const nom = document.getElementById("regNom").value.trim();
+  const email = document.getElementById("regEmail").value.trim().toLowerCase();
+  const telephone = document.getElementById("regTelephone").value.trim();
+  const wilaya = document.getElementById("regWilaya").value.trim();
+  const commune = document.getElementById("regCommune").value.trim();
+  const password = document.getElementById("regPassword").value;
+  const errEl = document.getElementById("registerError");
+  const okEl = document.getElementById("registerOk");
+  errEl.classList.remove("show"); okEl.classList.remove("show");
+
+  if (!prenom || !nom || !email || !telephone || !wilaya || !commune || password.length < 6) {
+    errEl.textContent = "Merci de remplir tous les champs (mot de passe : 6 caractères min).";
+    errEl.classList.add("show"); return;
+  }
+
+  const btn = document.getElementById("registerSubmit");
+  btn.disabled = true; btn.textContent = "Création...";
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+
+  if (error) {
+    btn.disabled = false; btn.textContent = "Créer mon compte";
+    errEl.textContent = "Échec de l'inscription : " + error.message;
+    errEl.classList.add("show");
+    return;
+  }
+  if (!data.user) {
+    btn.disabled = false; btn.textContent = "Créer mon compte";
+    errEl.textContent = "Compte non créé (réponse inattendue du serveur). Réessaie.";
+    errEl.classList.add("show");
+    return;
+  }
+
+  const { error: profErr } = await sb.from("profiles").insert({
+    id: data.user.id, prenom, nom, telephone, wilaya, commune,
+  });
+
+  btn.disabled = false; btn.textContent = "Créer mon compte";
+
+  if (profErr) {
+    console.error("profile insert error:", profErr);
+    errEl.textContent = "Compte créé, mais échec de l'enregistrement du profil : " + profErr.message;
+    errEl.classList.add("show");
+    return;
+  }
+
+  okEl.textContent = "✅ Compte créé avec succès !";
+  okEl.classList.add("show");
+
+  currentProfile = cacheProfile({ id: data.user.id, prenom, nom, telephone, wilaya, commune, created_at: new Date().toISOString() });
+  currentUserId = currentProfile.id;
+  renderHeader(); renderProducts();
+
+  setTimeout(() => { hideOverlay("authOverlay"); toast(`Compte créé — bienvenue, ${prenom} !`); }, 700);
+};
+
+/* ---------- Messagerie ---------- */
+async function getOrCreateConversation(productId) {
+  const p = products.find(x => x.id === productId);
+  let conv = conversations.find(c => c.productId === productId && c.buyerId === currentUserId);
+  if (conv) return conv;
+  const { data, error } = await sb.from("conversations")
+    .upsert({ product_id: productId, buyer_id: currentUserId, seller_id: p.sellerId }, { onConflict: "product_id,buyer_id,seller_id" })
+    .select().single();
+  if (error) { toast("Erreur conversation : " + error.message, 4000); return null; }
+  conv = mapConversationRow(data);
+  conversations.push(conv);
+  return conv;
+}
+async function ensureConversation(productId, buyerId, sellerId) {
+  let conv = conversations.find(c => c.productId === productId && c.buyerId === buyerId && c.sellerId === sellerId);
+  if (conv) return conv;
+  const { data, error } = await sb.from("conversations")
+    .upsert({ product_id: productId, buyer_id: buyerId, seller_id: sellerId }, { onConflict: "product_id,buyer_id,seller_id" })
+    .select().single();
+  if (error) { console.error("ensureConversation: " + error.message); return null; }
+  conv = mapConversationRow(data);
+  conversations.push(conv);
+  return conv;
+}
+async function postSystemMessage(productId, buyerId, sellerId, senderId, text) {
+  if (!buyerId || !productId) return; // achat invité (sans compte) : pas de conversation possible
+  const conv = await ensureConversation(productId, buyerId, sellerId);
+  if (!conv) return;
+  const { error } = await sb.from("messages").insert({ conversation_id: conv.id, sender_id: senderId, contenu: text });
+  if (error) console.error("postSystemMessage: " + error.message);
+}
+let activeChatConvId = null;
+let chatOpenedFromInbox = false;
+let chatPollInterval = null;
+
+let chatRenderKey = "";
+function dayLabel(ts) {
+  const d = new Date(ts), now = new Date();
+  const st = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((st(now) - st(d)) / 86400000);
+  if (diff === 0) return "Aujourd'hui";
+  if (diff === 1) return "Hier";
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+}
+function timeHM(ts) { return new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); }
+function setChatHeader(conv) {
+  const p = products.find(x => x.id === conv.productId);
+  const otherId = conv.buyerId === currentUserId ? conv.sellerId : conv.buyerId;
+  const other = profilesCache[otherId];
+  document.getElementById("chatTitle").textContent = other ? unesc(other.prenom + " " + other.nom) : "Conversation";
+  document.getElementById("chatSub").textContent = otherId === conv.sellerId ? "Vendeur" : "Acheteur";
+  document.getElementById("chatAvatar").textContent = other ? initials(unesc(other.prenom), unesc(other.nom)) : "?";
+  const pc = document.getElementById("chatProduct");
+  pc.innerHTML = p
+    ? `${p.images[0] ? `<img src="${p.images[0]}" />` : `<div class="ph">🖼️</div>`}<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nom}</div><div style="color:var(--primary);font-weight:800;font-size:13px;">${formatPrix(p.prix)}</div></div><span style="color:var(--text-light);">›</span>`
+    : `<div style="color:var(--text-light);font-size:13px;">Produit supprimé</div>`;
+  pc.onclick = () => { if (p) { stopChatPolling(); hideOverlay("chatOverlay"); openProductDetail(p.id); } };
+}
+async function openChat(productId, fromInbox) {
+  const user = currentUser();
+  if (!user) { openAuthModal("login"); return; }
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  if (p.sellerId === user.id) { toast("C'est ta propre annonce 🙂"); return; }
+  const conv = await getOrCreateConversation(productId);
+  if (!conv) return;
+  activeChatConvId = conv.id; chatOpenedFromInbox = !!fromInbox; chatRenderKey = "";
+  setChatHeader(conv);
+  showOverlay("chatOverlay");
+  await renderChatMessages();
+  startChatPolling();
+}
+async function openChatById(conversationId, productName, fromInbox) {
+  const conv = conversations.find(c => c.id === conversationId);
+  if (!conv) return;
+  activeChatConvId = conversationId; chatOpenedFromInbox = fromInbox !== false; chatRenderKey = "";
+  setChatHeader(conv);
+  showOverlay("chatOverlay");
+  await renderChatMessages();
+  startChatPolling();
+}
+function startChatPolling() {
+  stopChatPolling();
+  chatPollInterval = setInterval(() => { if (document.getElementById("chatOverlay").classList.contains("show")) renderChatMessages(); }, 4000);
+}
+function stopChatPolling() { if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; } }
+
+document.getElementById("chatBackBtn").onclick = () => {
+  stopChatPolling(); hideOverlay("chatOverlay");
+  if (chatOpenedFromInbox) refreshInbox().then(() => openListModal("Mes messages", myConversationsList));
+};
+document.querySelectorAll("[data-close]").forEach(btn => btn.onclick = () => {
+  if (btn.dataset.close === "chatOverlay") stopChatPolling();
+  hideOverlay(btn.dataset.close);
+});
+
+function renderQuickReplies(msgs) {
+  const conv = conversations.find(c => c.id === activeChatConvId);
+  const box = document.getElementById("chatQuick");
+  if (!conv) { box.innerHTML = ""; return; }
+  const iAmBuyer = conv.buyerId === currentUserId;
+  const last = msgs[msgs.length - 1];
+  let chips = [];
+  if (iAmBuyer && msgs.length === 0) chips = ["Bonjour, est-ce toujours disponible ?", "Quel est le dernier prix ?", "Livraison possible ?"];
+  else if (!iAmBuyer && last && last.senderId !== currentUserId) chips = ["Oui, toujours disponible 👍", "Dis-moi ton offre pour le prix", "Je peux livrer, dis-moi où"];
+  box.innerHTML = chips.map(t => `<button data-q="${esc(t)}">${esc(t)}</button>`).join("");
+  box.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { document.getElementById("chatInput").value = b.dataset.q; sendChatMessage(); });
+}
+async function renderChatMessages() {
+  if (!activeChatConvId) return;
+  const { data, error } = await sb.from("messages").select("*").eq("conversation_id", activeChatConvId).order("created_at", { ascending: true });
+  if (error) { console.error("renderChatMessages: " + error.message); return; }
+  const msgs = data.map(mapMessageRow);
+  const unreadIds = msgs.filter(m => m.senderId !== currentUserId && !m.isRead).map(m => m.id);
+  if (unreadIds.length) sb.from("messages").update({ is_read: true }).in("id", unreadIds).then(() => {});
+  const key = msgs.map(m => m.id + (m.isRead ? "1" : "0")).join(",");
+  if (key === chatRenderKey) return;
+  const box = document.getElementById("chatMessages");
+  const nearBottom = chatRenderKey === "" || (box.scrollHeight - box.scrollTop - box.clientHeight < 120);
+  chatRenderKey = key;
+  let html = "", lastDay = "";
+  msgs.forEach(m => {
+    const day = dayLabel(m.createdAt);
+    if (day !== lastDay) { html += `<div class="day-sep">${day}</div>`; lastDay = day; }
+    const mine = m.senderId === currentUserId;
+    html += `<div class="msg ${mine ? 'me' : 'them'}">${m.contenu}<div class="meta">${timeHM(m.createdAt)}${mine ? (m.isRead ? " ✓✓" : " ✓") : ""}</div></div>`;
+  });
+  box.innerHTML = html || `<div style="text-align:center;color:var(--text-light);font-size:13px;margin:auto;">👋 Dis bonjour pour commencer la discussion</div>`;
+  if (nearBottom) box.scrollTop = box.scrollHeight;
+  renderQuickReplies(msgs);
+}
+document.getElementById("chatSend").onclick = sendChatMessage;
+document.getElementById("chatInput").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChatMessage(); });
+async function sendChatMessage() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text || !activeChatConvId) return;
+  input.value = "";
+  const { error } = await sb.from("messages").insert({ conversation_id: activeChatConvId, sender_id: currentUserId, contenu: text });
+  if (error) { toast("Erreur envoi : " + error.message, 4000); return; }
+  await renderChatMessages();
+}
+
+/* ---------- Listes ---------- */
+function myFavoritesList() {
+  const mine = favorites.filter(f => f.userId === currentUserId).map(f => products.find(p => p.id === f.productId)).filter(Boolean);
+  if (!mine.length) return `<p style="color:var(--text-light);">Aucun favori pour le moment.</p>`;
+  return `<div class="products-grid">` + mine.map(p => `<div class="product-card" onclick="hideOverlay('listOverlay');openProductDetail('${p.id}')">
+    <div class="product-image">${p.images[0] ? `<img src="${p.images[0]}"/>` : "🖼️"}</div>
+    <div class="product-body"><div class="product-name">${p.nom}</div><div class="product-price">${formatPrix(p.prix)}</div></div>
+  </div>`).join("") + `</div>`;
+}
+let inboxMeta = {};
+async function refreshInbox() {
+  await refreshConversations();
+  inboxMeta = {};
+  const ids = conversations.map(c => c.id);
+  const otherIds = [...new Set(conversations.map(c => c.buyerId === currentUserId ? c.sellerId : c.buyerId))].filter(id => id && !profilesCache[id]);
+  if (otherIds.length) {
+    const { data } = await sb.from("profiles").select("id,prenom,nom,telephone,wilaya,commune,created_at").in("id", otherIds);
+    (data || []).forEach(cacheProfile);
+  }
+  if (!ids.length) return;
+  const { data, error } = await sb.from("messages").select("*").in("conversation_id", ids).order("created_at", { ascending: false });
+  if (error) { console.error("refreshInbox: " + error.message); return; }
+  (data || []).map(mapMessageRow).forEach(m => {
+    const meta = inboxMeta[m.conversationId] || (inboxMeta[m.conversationId] = { last: m, unread: 0 });
+    if (m.senderId !== currentUserId && !m.isRead) meta.unread++;
+  });
+}
+function myConversationsList() {
+  const mine = conversations.filter(c => c.buyerId === currentUserId || c.sellerId === currentUserId)
+    .sort((a, b) => ((inboxMeta[b.id]?.last.createdAt) || b.createdAt) - ((inboxMeta[a.id]?.last.createdAt) || a.createdAt));
+  if (!mine.length) return `<p style="color:var(--text-light);">Aucune conversation pour le moment.</p>`;
+  return mine.map(c => {
+    const p = products.find(x => x.id === c.productId);
+    const otherId = c.buyerId === currentUserId ? c.sellerId : c.buyerId;
+    const other = profilesCache[otherId];
+    const meta = inboxMeta[c.id];
+    const unread = meta ? meta.unread : 0;
+    const last = meta ? meta.last : null;
+    const img = p && p.images[0];
+    return `<div class="my-list-item" data-conv="${c.id}" style="cursor:pointer;padding:12px;${unread ? 'background:var(--soft);' : ''}">
+      ${img ? `<img class="thumb" src="${img}" />` : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:22px;">🖼️</div>`}
+      <div class="info">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;">
+          <div class="n" style="${unread ? 'font-weight:800;' : ''}">📦 ${p ? p.nom : "Produit supprimé"}</div>
+          <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">${last ? timeAgo(last.createdAt) : ""}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-light);">${other ? other.prenom + " " + other.nom : "Utilisateur"}</div>
+        <div style="font-size:13px;color:${unread ? 'var(--text)' : 'var(--text-light)'};font-weight:${unread ? '600' : '400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${last ? (last.senderId === currentUserId ? "Toi : " : "") + last.contenu : "Aucun message"}</div>
+      </div>
+      ${unread ? `<span style="background:var(--primary);color:white;font-size:11px;font-weight:700;border-radius:999px;padding:2px 7px;">${unread}</span>` : ""}
+    </div>`;
+  }).join("");
+}
+function myAnnoncesList() {
+  const mine = products.filter(p => p.sellerId === currentUserId).sort((a, b) => b.createdAt - a.createdAt);
+  if (!mine.length) return `<p style="color:var(--text-light);">Tu n'as encore publié aucune annonce.</p>`;
+  return mine.map(p => `<div class="my-list-item">
+      <img class="thumb" src="${p.images[0] || ''}" style="${p.images[0] ? '' : 'display:flex;align-items:center;justify-content:center;'}" />
+      <div class="info"><div class="n">${p.nom}</div><div style="font-size:12px;color:var(--text-light);">${formatPrix(p.prix)} · ${p.status === 'ACTIVE' ? 'Active' : p.status === 'VENDUE' ? 'Vendue' : 'Désactivée'}</div></div>
+      <button class="btn btn-outline btn-sm" data-toggle="${p.id}">${p.status === 'ACTIVE' ? 'Marquer vendu' : 'Réactiver'}</button>
+      <button class="btn btn-outline btn-sm" data-del="${p.id}">🗑️</button>
+    </div>`).join("");
+}
+const ORDER_STATUS_LABELS = { EN_ATTENTE: "En attente", ACCEPTEE: "Acceptée", REFUSEE: "Refusée", EN_PREPARATION: "En préparation", EXPEDIEE: "Expédiée", LIVREE: "Livrée", ANNULEE: "Annulée" };
+const ORDER_STATUS_COLORS = { EN_ATTENTE: "#946200", ACCEPTEE: "#0e7c66", REFUSEE: "#b91c1c", EN_PREPARATION: "#0e7c66", EXPEDIEE: "#0e7c66", LIVREE: "#0e7c66", ANNULEE: "#6b7280" };
+const NEXT_ORDER_STATUS = { ACCEPTEE: "EN_PREPARATION", EN_PREPARATION: "EXPEDIEE", EXPEDIEE: "LIVREE" };
+const NEXT_ORDER_STATUS_LABEL = { ACCEPTEE: "Mettre en préparation", EN_PREPARATION: "Marquer expédiée", EXPEDIEE: "Marquer livrée" };
+
+function receivedOrdersList() {
+  const mine = orders.filter(o => o.sellerId === currentUserId).sort((a, b) => b.createdAt - a.createdAt);
+  if (!mine.length) return `<p style="color:var(--text-light);">Aucune commande reçue pour le moment.</p>`;
+  return mine.map(o => `<div class="my-list-item" style="align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="n">${o.productNom} × ${o.quantite}</div>
+        <div style="font-size:12px;color:var(--text-light);margin:2px 0;">👤 ${o.nomAcheteur} · 📞 ${o.telephone}<br/>📍 ${o.commune}, ${o.wilaya} — ${o.adresse}<br/>${formatPrix(o.prixTotal)} · ${timeAgo(o.createdAt)}</div>
+        <span class="badge">${ORDER_STATUS_LABELS[o.status] || o.status}</span>
+      </div>
+      ${o.status === "EN_ATTENTE" ? `<div style="display:flex;flex-direction:column;gap:6px;"><button class="btn btn-primary btn-sm" data-accept="${o.id}">✔ Accepter</button><button class="btn btn-outline btn-sm" data-refuse="${o.id}">✕ Refuser</button></div>` : ""}
+      ${NEXT_ORDER_STATUS[o.status] ? `<button class="btn btn-outline btn-sm" data-advance="${o.id}">${NEXT_ORDER_STATUS_LABEL[o.status]} →</button>` : ""}
+    </div>`).join("");
+}
+function myOrdersList() {
+  const mine = orders.filter(o => o.buyerId === currentUserId).sort((a, b) => b.createdAt - a.createdAt);
+  if (!mine.length) return `<p style="color:var(--text-light);">Tu n'as encore passé aucune commande.</p>`;
+  return mine.map(o => {
+    const p = products.find(x => x.id === o.productId);
+    const color = ORDER_STATUS_COLORS[o.status] || "var(--text-light)";
+    const hasReview = reviews.some(r => r.orderId === o.id);
+    return `<div class="my-list-item">
+      <img class="thumb" src="${p && p.images[0] ? p.images[0] : ''}" style="${p && p.images[0] ? '' : 'display:flex;align-items:center;justify-content:center;'}" />
+      <div class="info"><div class="n">${o.productNom} × ${o.quantite}</div><div style="font-size:12px;color:var(--text-light);">${formatPrix(o.prixTotal)} · ${timeAgo(o.createdAt)}</div></div>
+      ${o.status === "LIVREE" && !hasReview ? `<button class="btn btn-primary btn-sm" data-review="${o.id}">⭐ Noter</button>` : `<span class="badge" style="background:${color}1a;color:${color};">${ORDER_STATUS_LABELS[o.status] || o.status}</span>`}
+    </div>`;
+  }).join("");
+}
+const ORDER_MESSAGES = {
+  ACCEPTEE: n => `✅ Ta commande « ${n} » a été acceptée. Je la prépare !`,
+  REFUSEE: n => `❌ Désolé, ta commande « ${n} » a été refusée.`,
+  EN_PREPARATION: n => `📦 Ta commande « ${n} » est en préparation.`,
+  EXPEDIEE: n => `🚚 Ta commande « ${n} » a été expédiée.`,
+  LIVREE: n => `🎉 Ta commande « ${n} » a été livrée. Pense à me noter ⭐`,
+};
+async function deleteProductSafe(id) {
+  const { error } = await sb.from("products").delete().eq("id", id);
+  if (!error) { products = products.filter(x => x.id !== id); return { ok: true, soft: false }; }
+  if (error.code === "23503" || /foreign key/i.test(error.message || "")) {
+    // l'annonce a déjà des commandes : on la retire de la vente sans perdre l'historique
+    const r = await sb.from("products").update({ status: "DESACTIVEE" }).eq("id", id);
+    if (!r.error) { const pr = products.find(x => x.id === id); if (pr) pr.status = "DESACTIVEE"; return { ok: true, soft: true }; }
+    toast("Erreur : " + r.error.message, 5000); return { ok: false };
+  }
+  toast("Erreur : " + error.message, 5000); return { ok: false };
+}
+async function changeOrderStatus(orderId, newStatus) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  const { error } = await sb.from("orders").update({ status: newStatus }).eq("id", orderId);
+  if (error) { toast("Erreur : " + error.message, 4000); return; }
+  if (ORDER_MESSAGES[newStatus]) {
+    await postSystemMessage(o.productId, o.buyerId, o.sellerId, currentUserId, ORDER_MESSAGES[newStatus](unesc(o.productNom)));
+  }
+  await refreshOrders();
+  openListModal("Commandes reçues", receivedOrdersList);
+  toast("Statut mis à jour : " + ORDER_STATUS_LABELS[newStatus]);
+}
+function openListModal(title, contentFn) {
+  document.getElementById("listTitle").textContent = title;
+  document.getElementById("listContent").innerHTML = typeof contentFn === "string" ? contentFn : contentFn();
+  showOverlay("listOverlay");
+
+  document.querySelectorAll("[data-toggle]").forEach(btn => btn.onclick = async () => {
+    const p = products.find(x => x.id === btn.dataset.toggle);
+    const newStatus = p.status === "ACTIVE" ? "VENDUE" : "ACTIVE";
+    const { error } = await sb.from("products").update({ status: newStatus }).eq("id", p.id);
+    if (error) { toast("Erreur : " + error.message, 4000); return; }
+    p.status = newStatus; openListModal("Mes annonces", myAnnoncesList); renderProducts();
+  });
+  document.querySelectorAll("[data-del]").forEach(btn => btn.onclick = async () => {
+    if (!confirm("Supprimer définitivement cette annonce ?")) return;
+    const r = await deleteProductSafe(btn.dataset.del);
+    if (!r.ok) return;
+    openListModal("Mes annonces", myAnnoncesList); renderProducts();
+    toast(r.soft ? "Annonce retirée de la vente (elle a des commandes, l'historique est conservé)." : "Annonce supprimée.", 5000);
+  });
+  document.querySelectorAll("[data-accept]").forEach(btn => btn.onclick = () => changeOrderStatus(btn.dataset.accept, "ACCEPTEE"));
+  document.querySelectorAll("[data-refuse]").forEach(btn => btn.onclick = () => changeOrderStatus(btn.dataset.refuse, "REFUSEE"));
+  document.querySelectorAll("[data-advance]").forEach(btn => btn.onclick = () => {
+    const o = orders.find(x => x.id === btn.dataset.advance);
+    if (o && NEXT_ORDER_STATUS[o.status]) changeOrderStatus(o.id, NEXT_ORDER_STATUS[o.status]);
+  });
+  document.querySelectorAll("[data-conv]").forEach(el => el.onclick = () => {
+    const c = conversations.find(x => x.id === el.dataset.conv);
+    if (!c) return;
+    const pr = products.find(x => x.id === c.productId);
+    hideOverlay("listOverlay");
+    openChatById(c.id, pr ? pr.nom : "Conversation", true);
+  });
+  document.querySelectorAll("[data-review]").forEach(btn => btn.onclick = () => openReviewModal(btn.dataset.review));
+}
+
+/* ---------- Avis ---------- */
+function openReviewModal(orderId) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  let selectedNote = 5;
+  const render = () => {
+    document.getElementById("listContent").innerHTML = `<div style="text-align:center;padding:10px 0 20px;">
+      <div style="font-size:14px;color:var(--text-light);margin-bottom:10px;">Comment s'est passée ta commande pour</div>
+      <div style="font-weight:700;margin-bottom:16px;">${o.productNom}</div>
+      <div id="starPicker" style="font-size:32px;letter-spacing:4px;cursor:pointer;margin-bottom:16px;">${[1,2,3,4,5].map(n => `<span data-star="${n}">${n <= selectedNote ? "⭐" : "☆"}</span>`).join("")}</div>
+      <textarea id="reviewComment" rows="3" placeholder="Ton avis (optionnel)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;" id="submitReview">Envoyer la note</button>
+    </div>`;
+    document.querySelectorAll("[data-star]").forEach(s => s.onclick = () => { selectedNote = +s.dataset.star; render(); });
+    document.getElementById("submitReview").onclick = async () => {
+      const commentaire = document.getElementById("reviewComment").value.trim();
+      const { error } = await sb.from("reviews").insert({ order_id: o.id, buyer_id: currentUserId, seller_id: o.sellerId, note: selectedNote, commentaire });
+      if (error) { toast("Erreur : " + error.message, 4000); return; }
+      hideOverlay("listOverlay"); toast("Merci pour ton avis ⭐");
+      await refreshAllReviews(); renderProducts();
+    };
+  };
+  document.getElementById("listTitle").textContent = "Noter le vendeur";
+  showOverlay("listOverlay"); render();
+}
+
+/* ---------- Checkout ---------- */
+let checkoutProductId = null;
+function openCheckout(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  checkoutProductId = productId;
+  document.getElementById("checkoutProductSummary").innerHTML = `
+    <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;background:var(--img-bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;">${p.images[0] ? `<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover;"/>` : "🖼️"}</div>
+    <div><div style="font-weight:700;font-size:14px;">${p.nom}</div><div class="product-price" style="font-size:15px;">${formatPrix(p.prix)}</div></div>`;
+  const user = currentUser();
+  document.getElementById("coNom").value = user ? `${user.prenom} ${user.nom}` : "";
+  document.getElementById("coTelephone").value = user ? user.telephone : "";
+  document.getElementById("coWilaya").value = user ? user.wilaya : p.wilaya;
+  document.getElementById("coCommune").value = user ? user.commune : p.commune;
+  document.getElementById("coQuantite").value = 1;
+  document.getElementById("coAdresse").value = "";
+  document.getElementById("checkoutError").classList.remove("show");
+  showOverlay("checkoutOverlay");
+}
+document.getElementById("checkoutSubmit").onclick = async () => {
+  const p = products.find(x => x.id === checkoutProductId);
+  const errEl = document.getElementById("checkoutError");
+  const nomAcheteur = document.getElementById("coNom").value.trim();
+  const telephone = document.getElementById("coTelephone").value.trim();
+  const quantite = Math.max(1, parseInt(document.getElementById("coQuantite").value, 10) || 1);
+  const modeLivraison = document.getElementById("coLivraison").value;
+  const wilaya = document.getElementById("coWilaya").value.trim();
+  const commune = document.getElementById("coCommune").value.trim();
+  const adresse = document.getElementById("coAdresse").value.trim();
+
+  if (!nomAcheteur || !telephone || !wilaya || !commune || !adresse) {
+    errEl.textContent = "Merci de remplir tous les champs."; errEl.classList.add("show"); return;
+  }
+  if (!/^0[5-7][0-9]{8}$/.test(telephone)) {
+    errEl.textContent = "Numéro de téléphone algérien invalide (ex: 0551234567)."; errEl.classList.add("show"); return;
+  }
+  errEl.classList.remove("show");
+
+  const { error } = await sb.from("orders").insert({
+    product_id: p.id, seller_id: p.sellerId, buyer_id: currentUserId || null,
+    product_nom: unesc(p.nom), quantite, prix_total: p.prix * quantite,
+    nom_acheteur: nomAcheteur, telephone, wilaya, commune, adresse, mode_livraison: modeLivraison, status: "EN_ATTENTE",
+  });
+  if (error) { errEl.textContent = "Erreur : " + error.message; errEl.classList.add("show"); return; }
+
+  if (currentUserId) {
+    await postSystemMessage(p.id, currentUserId, p.sellerId, currentUserId,
+      `🛒 Nouvelle commande : ${unesc(p.nom)} × ${quantite} — ${formatPrix(p.prix * quantite)}. Livraison : ${commune}, ${wilaya}.`);
+  }
+  hideOverlay("checkoutOverlay"); hideOverlay("detailOverlay");
+  toast("✅ Commande confirmée ! Le vendeur va te contacter.");
+  if (currentUserId) await refreshOrders();
+};
+
+/* ---------- Localisation ---------- */
+document.getElementById("locationBadge").onclick = () => {
+  if (!navigator.geolocation) { toast("La géolocalisation n'est pas disponible."); return; }
+  if (location.protocol !== "https:" && location.hostname !== "localhost") { toast("⚠️ Le GPS ne marche que sur https:// — on garde Alger."); return; }
+  toast("📍 Localisation en cours...");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      DEFAULT_LOCATION.lat = +pos.coords.latitude.toFixed(4);
+      DEFAULT_LOCATION.lng = +pos.coords.longitude.toFixed(4);
+      DEFAULT_LOCATION.ville = "Ma position";
+      localStorage.setItem("souqdz_location", JSON.stringify(DEFAULT_LOCATION));
+      document.getElementById("locationLabel").textContent = "Ma position";
+      toast(`📍 Position mise à jour.`);
+    },
+    (err) => {
+      const msgs = { 1: "Tu as refusé l'accès à ta position.", 2: "Position indisponible.", 3: "Délai dépassé." };
+      toast("⚠️ " + (msgs[err.code] || "Erreur GPS") + " — on garde Alger.");
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+};
+
+/* ---------- Overlays ---------- */
+function showOverlay(id) { document.getElementById(id).classList.add("show"); }
+function hideOverlay(id) { document.getElementById(id).classList.remove("show"); }
+document.querySelectorAll(".overlay").forEach(ov => ov.addEventListener("click", (e) => { if (e.target === ov) ov.classList.remove("show"); }));
+
+/* ---------- Démarrage ---------- */
+(async function start() {
+  document.getElementById("locationLabel").textContent = DEFAULT_LOCATION.ville;
+  populateCategorySelect();
+  populateWilayaSelect();
+  await initSession();
+  renderHeader();
+  await loadInitialData();
+  checkNotifications();
+  setInterval(() => { if (document.visibilityState === "visible") checkNotifications(); }, 20000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkNotifications(); });
+})();
+</script>
+
+</body>
+</html>
