@@ -177,7 +177,8 @@ export default function App() {
     const {error}=await supabase.from("orders").update({status}).eq("id",orderId);
     if(error) return Alert.alert("Commande",error.message);
     await loadOrders();
-  }\n  async function placeOrder() {
+  }
+  async function placeOrder() {
     if (!session?.user) { setSelected(null);setAuthVisible(true);return; }
     if (!selected) return;
     const buyerName=[profile?.prenom,profile?.nom].filter(Boolean).join(" ") || "Acheteur";
