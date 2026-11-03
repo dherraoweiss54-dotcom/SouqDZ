@@ -173,7 +173,11 @@ export default function App() {
     setPublishVisible(false); setName("");setDescription("");setPrice("");setOldPrice("");setPhotos([]);
     await loadProducts();setTab("Accueil");Alert.alert("SouqDZ","Ton annonce est publiée.");
   }
-  async function updateOrder(orderId,status) {\n    const {error}=await supabase.from("orders").update({status}).eq("id",orderId);\n    if(error) return Alert.alert("Commande",error.message);\n    await loadOrders();\n  }\n  async function placeOrder() {
+  async function updateOrder(orderId,status) {
+    const {error}=await supabase.from("orders").update({status}).eq("id",orderId);
+    if(error) return Alert.alert("Commande",error.message);
+    await loadOrders();
+  }\n  async function placeOrder() {
     if (!session?.user) { setSelected(null);setAuthVisible(true);return; }
     if (!selected) return;
     const buyerName=[profile?.prenom,profile?.nom].filter(Boolean).join(" ") || "Acheteur";
