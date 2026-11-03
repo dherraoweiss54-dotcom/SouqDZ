@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "SouqDZ",
+    "slug": "souqdz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "souqdz",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "dz.souqdz.app" },
+    "android": { "package": "dz.souqdz.app", "adaptiveIcon": { "backgroundColor": "#0e7c66" } },
+    "plugins": ["expo-image-picker"],
+    "extra": { "eas": { "projectId": "REPLACE_WITH_EAS_PROJECT_ID" } }
+  }
+}
