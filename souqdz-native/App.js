@@ -37,6 +37,10 @@ export default function App() {
   const [delivery,setDelivery] = useState("À discuter");
   const [photos,setPhotos] = useState([]);
   const [orders,setOrders] = useState([]);
+  const [conversations,setConversations] = useState([]);
+  const [chat,setChat] = useState(null);
+  const [messages,setMessages] = useState([]);
+  const [messageText,setMessageText] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -55,7 +59,7 @@ export default function App() {
     return () => { mounted = false; subscription.unsubscribe(); };
   },[]);
 
-  useEffect(() => { if (session?.user) { loadFavorites(); loadOrders(); } },[session?.user?.id]);
+  useEffect(() => { if (session?.user) { loadFavorites(); loadOrders(); loadConversations(); } },[session?.user?.id]);
 
   async function loadProfile(id) {
     const {data,error} = await supabase.from("profiles").select("*").eq("id",id).maybeSingle();
@@ -71,6 +75,38 @@ export default function App() {
     if (!session?.user) return;
     const {data,error} = await supabase.from("favorites").select("product_id").eq("user_id",session.user.id);
     if (!error) setFavorites((data || []).map(x=>x.product_id));
+  }
+  async function loadConversations() {
+    if (!session?.user) return;
+    const id=session.user.id;
+    const {data,error}=await supabase.from("conversations").select("*").or("buyer_id.eq."+id+",seller_id.eq."+id).order("created_at",{ascending:false});
+    if (error) { console.warn("conversations",error.message); return; }
+    setConversations(data || []);
+  }
+  async function loadMessages(conversationId) {
+    const {data,error}=await supabase.from("messages").select("*").eq("conversation_id",conversationId).order("created_at",{ascending:true});
+    if (error) return Alert.alert("Messages",error.message);
+    setMessages(data || []);
+    const unread=(data || []).filter(m=>m.sender_id!==session?.user?.id&&!m.is_read).map(m=>m.id);
+    if (unread.length) await supabase.from("messages").update({is_read:true}).in("id",unread);
+  }
+  async function startChat(product) {
+    if (!session?.user) { setAuthVisible(true); return; }
+    if (product.seller_id===session.user.id) return Alert.alert("SouqDZ","Tu ne peux pas contacter ton propre compte.");
+    const {data,error}=await supabase.from("conversations").upsert({product_id:product.id,buyer_id:session.user.id,seller_id:product.seller_id},{onConflict:"product_id,buyer_id,seller_id"}).select().single();
+    if (error) return Alert.alert("Conversation",error.message);
+    setChat({conversation:data,product});
+    await loadMessages(data.id);
+    await loadConversations();
+  }
+  async function sendMessage() {
+    const contenu=messageText.trim();
+    if (!contenu || !chat || !session?.user) return;
+    setBusy(true);
+    const {error}=await supabase.from("messages").insert({conversation_id:chat.conversation.id,sender_id:session.user.id,contenu});
+    setBusy(false);
+    if (error) return Alert.alert("Envoi impossible",error.message);
+    setMessageText(""); await loadMessages(chat.conversation.id); await loadConversations();
   }
   async function loadOrders() {
     if (!session?.user) return;
@@ -106,7 +142,7 @@ export default function App() {
 
   async function logout() {
     await supabase.auth.signOut();
-    setSession(null); setProfile(null); setTab("Accueil");
+    setSession(null); setProfile(null); setTab("Accueil"); setConversations([]); setChat(null); setMessages([]);
   }
   async function toggleFavorite(p) {
     if (!session?.user) { setAuthVisible(true); return; }
@@ -161,7 +197,7 @@ export default function App() {
     </View>
     <View style={styles.search}><Text style={{fontSize:18}}>⌕</Text><TextInput value={search} onChangeText={setSearch} placeholder="Rechercher un produit, une wilaya…" style={styles.searchInput}/></View>
     <View style={styles.nav}>
-      {["Accueil","Favoris","Commandes","Compte"].map(t=><Pressable key={t} onPress={()=>setTab(t)} style={[styles.navItem,tab===t&&styles.navActive]}><Text style={[styles.navText,tab===t&&styles.navTextActive]}>{t}</Text></Pressable>)}
+      {["Accueil","Favoris","Commandes","Messages","Compte"].map(t=><Pressable key={t} onPress={()=>setTab(t)} style={[styles.navItem,tab===t&&styles.navActive]}><Text style={[styles.navText,tab===t&&styles.navTextActive]}>{t}</Text></Pressable>)}
     </View>
     {tab==="Accueil" && <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.hero}><Text style={styles.heroTitle}>Le marché algérien, dans ta poche.</Text><Text style={styles.heroSub}>Trouve ce que tu cherches ou publie ton annonce.</Text><Pressable style={styles.heroButton} onPress={()=>setPublishVisible(true)}><Text style={styles.heroButtonText}>＋ Publier une annonce</Text></Pressable></View>
@@ -172,10 +208,12 @@ export default function App() {
       {!visible.length&&<Text style={styles.empty}>Aucune annonce trouvée.</Text>}
     </ScrollView>}
     {tab==="Favoris"&&<ScrollView contentContainerStyle={styles.content}><Text style={styles.section}>Mes favoris</Text><View style={styles.grid}>{favoriteProducts.map(p=><ProductCard key={p.id} product={p} favorite onOpen={()=>setSelected(p)} onFavorite={()=>toggleFavorite(p)}/>)}</View>{!favoriteProducts.length&&<Text style={styles.empty}>Connecte-toi et ajoute des annonces à tes favoris.</Text>}</ScrollView>}
+    {tab==="Messages"&&<ScrollView contentContainerStyle={styles.content}><Text style={styles.section}>Mes conversations</Text>{conversations.map(c=>{const p=products.find(x=>x.id===c.product_id);return <Pressable key={c.id} style={styles.order} onPress={async()=>{setChat({conversation:c,product:p||{nom:"Produit"}});await loadMessages(c.id);}}><Text style={styles.productName}>{p?.nom || "Produit"}</Text><Text style={styles.muted}>Ouvrir la discussion ›</Text></Pressable>;})}{!conversations.length&&<Text style={styles.empty}>Aucune conversation. Contacte un vendeur depuis une annonce.</Text>}</ScrollView>}
     {tab==="Commandes"&&<ScrollView contentContainerStyle={styles.content}><Text style={styles.section}>Mes commandes</Text>{orders.map(o=><View key={o.id} style={styles.order}><Text style={styles.productName}>{o.product_nom}</Text><Text style={styles.price}>{money(o.prix_total)}</Text><Text style={styles.muted}>Statut : {o.status} · {o.commune}, {o.wilaya}</Text></View>)}{!orders.length&&<Text style={styles.empty}>Aucune commande pour le moment.</Text>}</ScrollView>}
     {tab==="Compte"&&<View style={styles.content}>{session?<><Text style={styles.section}>Mon compte</Text><Text style={styles.productName}>{profile?.prenom} {profile?.nom}</Text><Text style={styles.muted}>{profile?.telephone} · {profile?.wilaya}</Text><Pressable style={styles.outlineButton} onPress={logout}><Text style={styles.outlineText}>Se déconnecter</Text></Pressable></>:<><Text style={styles.section}>Bienvenue sur SouqDZ</Text><Pressable style={styles.primaryButton} onPress={()=>setAuthVisible(true)}><Text style={styles.primaryText}>Connexion / Inscription</Text></Pressable></>}</View>}
     <View style={styles.bottom}><Text style={styles.bottomText}>SouqDZ · Marketplace algérienne</Text></View>
-    <Modal visible={!!selected} animationType="slide" onRequestClose={()=>setSelected(null)}><SafeAreaView style={styles.modalPage}>{selected&&<><View style={styles.modalHead}><Pressable onPress={()=>setSelected(null)}><Text style={styles.close}>← Retour</Text></Pressable><Text style={styles.logoSmall}>SouqDZ</Text></View><ScrollView>{selected.images?.[0]?<Image source={{uri:selected.images[0]}} style={styles.detailImage}/>:<View style={styles.detailPlaceholder}><Text style={{fontSize:54}}>🛍️</Text></View>}<View style={styles.detailBody}><Text style={styles.price}>{money(selected.prix)}</Text><Text style={styles.detailTitle}>{selected.nom}</Text><Text style={styles.muted}>{selected.categorie} · {selected.etat}</Text><Text style={styles.detailDesc}>{selected.description}</Text><Text style={styles.muted}>📍 {selected.commune}, {selected.wilaya}</Text><Text style={styles.muted}>Livraison : {selected.livraison || "À discuter"}</Text><Pressable style={styles.primaryButton} onPress={placeOrder}><Text style={styles.primaryText}>Commander</Text></Pressable><Pressable style={styles.outlineButton} onPress={()=>toggleFavorite(selected)}><Text style={styles.outlineText}>{favorites.includes(selected.id)?"Retirer des favoris":"Ajouter aux favoris"}</Text></Pressable></View></ScrollView></>}</SafeAreaView></Modal>
+    <Modal visible={!!selected} animationType="slide" onRequestClose={()=>setSelected(null)}><SafeAreaView style={styles.modalPage}>{selected&&<><View style={styles.modalHead}><Pressable onPress={()=>setSelected(null)}><Text style={styles.close}>← Retour</Text></Pressable><Text style={styles.logoSmall}>SouqDZ</Text></View><ScrollView>{selected.images?.[0]?<Image source={{uri:selected.images[0]}} style={styles.detailImage}/>:<View style={styles.detailPlaceholder}><Text style={{fontSize:54}}>🛍️</Text></View>}<View style={styles.detailBody}><Text style={styles.price}>{money(selected.prix)}</Text><Text style={styles.detailTitle}>{selected.nom}</Text><Text style={styles.muted}>{selected.categorie} · {selected.etat}</Text><Text style={styles.detailDesc}>{selected.description}</Text><Text style={styles.muted}>📍 {selected.commune}, {selected.wilaya}</Text><Text style={styles.muted}>Livraison : {selected.livraison || "À discuter"}</Text><Pressable style={styles.primaryButton} onPress={placeOrder}><Text style={styles.primaryText}>Commander</Text></Pressable><Pressable style={styles.outlineButton} onPress={()=>startChat(selected)}><Text style={styles.outlineText}>Contacter le vendeur</Text></Pressable><Pressable style={styles.outlineButton} onPress={()=>toggleFavorite(selected)}><Text style={styles.outlineText}>{favorites.includes(selected.id)?"Retirer des favoris":"Ajouter aux favoris"}</Text></Pressable></View></ScrollView></>}</SafeAreaView></Modal>
+    <Modal visible={!!chat} animationType="slide" onRequestClose={()=>setChat(null)}><SafeAreaView style={styles.modalPage}><View style={styles.modalHead}><Pressable onPress={()=>setChat(null)}><Text style={styles.close}>Retour</Text></Pressable><Text style={styles.logoSmall}>Messages</Text></View>{chat&&<Text style={styles.muted}>Annonce : {chat.product?.nom}</Text>}<FlatList style={{flex:1,padding:14}} data={messages} keyExtractor={m=>String(m.id)} renderItem={({item})=><View style={[styles.bubble,item.sender_id===session?.user?.id?styles.myBubble:styles.theirBubble]}><Text style={{color:"#17201d"}}>{item.contenu}</Text><Text style={styles.muted}>{new Date(item.created_at).toLocaleString("fr-DZ")}</Text></View>} ListEmptyComponent={<Text style={styles.empty}>Commence la discussion par un message.</Text>}/><View style={styles.chatComposer}><TextInput value={messageText} onChangeText={setMessageText} placeholder="Écrire un message..." style={[styles.input,{flex:1}]}/><Pressable onPress={sendMessage} style={styles.sendBtn}><Text style={styles.primaryText}>Envoyer</Text></Pressable></View></SafeAreaView></Modal>
     <Modal visible={authVisible} animationType="slide" onRequestClose={()=>setAuthVisible(false)}><KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={styles.modalPage}><View style={styles.modalHead}><Pressable onPress={()=>setAuthVisible(false)}><Text style={styles.close}>Fermer ✕</Text></Pressable><Text style={styles.logoSmall}>SouqDZ</Text></View><ScrollView contentContainerStyle={styles.form}><Text style={styles.section}>{register?"Créer un compte":"Connexion"}</Text><Pressable onPress={()=>setRegister(!register)}><Text style={styles.refresh}>{register?"Déjà inscrit ? Se connecter":"Pas encore de compte ? S'inscrire"}</Text></Pressable>{register&&<><Field label="Prénom" value={first} onChangeText={setFirst}/><Field label="Nom" value={last} onChangeText={setLast}/><Field label="Téléphone" value={phone} onChangeText={setPhone} keyboardType="phone-pad"/><Field label="Wilaya" value={wilaya} onChangeText={setWilaya}/><Field label="Commune" value={commune} onChangeText={setCommune}/></>}<Field label="E-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/><Field label="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry/><Pressable style={styles.primaryButton} disabled={busy} onPress={authenticate}><Text style={styles.primaryText}>{busy?"Patiente…":register?"Créer mon compte":"Se connecter"}</Text></Pressable></ScrollView></KeyboardAvoidingView></Modal>
     <Modal visible={publishVisible} animationType="slide" onRequestClose={()=>setPublishVisible(false)}><KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={styles.modalPage}><View style={styles.modalHead}><Pressable onPress={()=>setPublishVisible(false)}><Text style={styles.close}>Annuler ✕</Text></Pressable><Text style={styles.logoSmall}>Nouvelle annonce</Text></View><ScrollView contentContainerStyle={styles.form}><Text style={styles.section}>Publier un produit</Text><Field label="Titre" value={name} onChangeText={setName}/><Field label="Description" value={description} onChangeText={setDescription} multiline/><Field label="Prix (DA)" value={price} onChangeText={setPrice} keyboardType="numeric"/><Field label="Ancien prix (facultatif)" value={oldPrice} onChangeText={setOldPrice} keyboardType="numeric"/><Field label="Catégorie" value={newCategory} onChangeText={setNewCategory}/><Field label="État" value={condition} onChangeText={setCondition}/><Field label="Wilaya" value={wilaya} onChangeText={setWilaya}/><Field label="Commune" value={commune} onChangeText={setCommune}/><Field label="Livraison" value={delivery} onChangeText={setDelivery}/><Pressable style={styles.outlineButton} onPress={choosePhotos}><Text style={styles.outlineText}>＋ Ajouter des photos ({photos.length}/6)</Text></Pressable><View style={styles.photoRow}>{photos.map((p,i)=><Image key={i} source={{uri:p}} style={styles.thumb}/>)}</View><Pressable style={styles.primaryButton} disabled={busy} onPress={publish}><Text style={styles.primaryText}>{busy?"Publication…":"Publier l'annonce"}</Text></Pressable></ScrollView></KeyboardAvoidingView></Modal>
   </SafeAreaView>;
@@ -198,4 +236,4 @@ const styles=StyleSheet.create({
  empty:{textAlign:"center",color:"#808984",paddingVertical:28},bottom:{padding:10,alignItems:"center",borderTopWidth:1,borderColor:"#e5e7eb",backgroundColor:"#fff"},bottomText:{fontSize:10,color:"#89918d"},
  modalPage:{flex:1,backgroundColor:"#f7f8fa"},modalHead:{padding:16,backgroundColor:"#fff",flexDirection:"row",justifyContent:"space-between",alignItems:"center",borderBottomWidth:1,borderColor:"#e5e7eb"},close:{color:"#0e7c66",fontWeight:"800"},logoSmall:{color:"#0e7c66",fontWeight:"900",fontSize:17},form:{padding:18,paddingBottom:40},field:{marginBottom:13},fieldLabel:{fontWeight:"700",fontSize:12,color:"#4d5752",marginBottom:6},input:{backgroundColor:"#fff",borderWidth:1,borderColor:"#dfe5e1",borderRadius:10,paddingHorizontal:12,paddingVertical:12,fontSize:14,color:"#1a1a1a"},
  primaryButton:{backgroundColor:"#0e7c66",padding:15,borderRadius:11,alignItems:"center",marginTop:14},primaryText:{color:"#fff",fontWeight:"900",fontSize:14},outlineButton:{borderWidth:1,borderColor:"#0e7c66",padding:13,borderRadius:10,alignItems:"center",marginTop:12},outlineText:{color:"#0e7c66",fontWeight:"800"},
- detailImage:{width:"100%",height:280,backgroundColor:"#eef1f4"},detailPlaceholder:{height:240,alignItems:"center",justifyContent:"center",backgroundColor:"#eef1f4"},detailBody:{padding:18},detailTitle:{fontSize:23,fontWeight:"900",color:"#18201e",marginTop:6},detailDesc:{fontSize:14,color:"#414a46",lineHeight:22,marginVertical:16},order:{padding:14,backgroundColor:"#fff",borderRadius:12,marginBottom:10},photoRow:{flexDirection:"row",flexWrap:"wrap",gap:8,marginTop:12},thumb:{width:70,height:70,borderRadius:8},});
+ bubble:{padding:12,borderRadius:12,marginBottom:10,maxWidth:"86%"},myBubble:{alignSelf:"flex-end",backgroundColor:"#dff3eb"},theirBubble:{alignSelf:"flex-start",backgroundColor:"#fff"},chatComposer:{flexDirection:"row",padding:12,gap:8,backgroundColor:"#fff",alignItems:"center"},sendBtn:{backgroundColor:"#0e7c66",padding:12,borderRadius:10},detailImage:{width:"100%",height:280,backgroundColor:"#eef1f4"},detailPlaceholder:{height:240,alignItems:"center",justifyContent:"center",backgroundColor:"#eef1f4"},detailBody:{padding:18},detailTitle:{fontSize:23,fontWeight:"900",color:"#18201e",marginTop:6},detailDesc:{fontSize:14,color:"#414a46",lineHeight:22,marginVertical:16},order:{padding:14,backgroundColor:"#fff",borderRadius:12,marginBottom:10},photoRow:{flexDirection:"row",flexWrap:"wrap",gap:8,marginTop:12},thumb:{width:70,height:70,borderRadius:8},});
