@@ -6,8 +6,24 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "souqdz",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "dz.souqdz.app" },
-    "android": { "package": "dz.souqdz.app", "adaptiveIcon": { "backgroundColor": "#0e7c66" } },
-    "plugins": ["expo-image-picker"]
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dz.souqdz.app"
+    },
+    "android": {
+      "package": "dz.souqdz.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0e7c66"
+      }
+    },
+    "plugins": [
+      "expo-image-picker"
+    ],
+    "owner": "oueiss-team",
+    "extra": {
+      "eas": {
+        "projectId": "91d188df-7fd5-4f66-a505-9dabf84f99e6"
+      }
+    }
   }
 }
